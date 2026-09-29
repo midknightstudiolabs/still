@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import '../application/still_controller.dart';
 import '../domain/models.dart';
 import 'design.dart';
+import 'value_progress.dart';
 
 Future<void> editProgress(BuildContext context, StillController c, String id) =>
     Navigator.push<void>(
       context,
       MaterialPageRoute(
-        builder: (_) => ProgressEditor(controller: c, id: id),
+        builder: (_) => c.vision(id).measure == ProgressMeasure.milestones
+            ? ProgressEditor(controller: c, id: id)
+            : ValueProgressEditor(
+                controller: c,
+                id: id,
+                measure: c.vision(id).measure,
+              ),
       ),
     );
 
@@ -25,6 +32,7 @@ class VisionProgress extends StatelessWidget {
     final dates = [
       ...v.milestones.where((m) => m.done).map((m) => m.completedAt!),
       ...controller.proofs(v.id).map((p) => p.createdAt),
+      ...v.entries.map((e) => e.when),
     ]..sort();
     return Paper(
       child: Column(
@@ -39,27 +47,29 @@ class VisionProgress extends StatelessWidget {
           if (percent != null) ...[
             const SizedBox(height: 10),
             LinearProgressIndicator(
-              value: v.milestonesDone / v.milestones.length,
+              value: v.progressRatio,
               minHeight: 6,
               borderRadius: BorderRadius.circular(8),
-              semanticsLabel: 'Milestones completed',
+              semanticsLabel: 'Progress toward your target',
               semanticsValue: '$percent',
             ),
             const SizedBox(height: 12),
             Text(
-              '${v.milestonesDone} of ${v.milestones.length} milestones complete',
+              v.measure == ProgressMeasure.milestones
+                  ? '${v.milestonesDone} of ${v.milestones.length} milestones complete'
+                  : '${valueText(v.valueTotal)} / ${valueText(v.valueTarget)} ${v.valueUnit}',
             ),
             if (percent == 100)
               const Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
-                  'Your milestones are complete. You decide when the vision has happened.',
+                  'Your target is reached. You decide when the vision has happened.',
                   style: TextStyle(height: 1.5),
                 ),
               ),
           ] else
             const Text(
-              'Add milestones to see your percentage. Your existing moments are still part of your story.',
+              'Choose milestones, money, or another value to see your percentage.',
               style: TextStyle(height: 1.5),
             ),
           const SizedBox(height: 16),
@@ -75,7 +85,7 @@ class VisionProgress extends StatelessWidget {
           ),
           if (dates.isNotEmpty)
             Text(
-              'Latest step or proof ${shortDate(dates.last)}',
+              'Latest progress ${shortDate(dates.last)}',
               style: const TextStyle(height: 1.7),
             ),
           const SizedBox(height: 10),
@@ -83,8 +93,10 @@ class VisionProgress extends StatelessWidget {
             onPressed: () => editProgress(context, controller, v.id),
             icon: const Icon(Icons.checklist_rounded),
             label: Text(
-              v.milestones.isEmpty
-                  ? 'Set milestones & date'
+              v.measure != ProgressMeasure.milestones
+                  ? 'Record value & date'
+                  : v.milestones.isEmpty
+                  ? 'Set progress & date'
                   : 'Update milestones & date',
             ),
           ),
@@ -237,6 +249,46 @@ class _ProgressEditorState extends State<ProgressEditor> {
               padding: const EdgeInsets.all(24),
               children: [
                 Text('See how far you’ve come.', style: editorial(36)),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Milestones'),
+                      selected: true,
+                      onSelected: (_) {},
+                    ),
+                    for (final measure in [
+                      ProgressMeasure.money,
+                      ProgressMeasure.value,
+                    ])
+                      ChoiceChip(
+                        label: Text(
+                          measure == ProgressMeasure.money
+                              ? 'Money'
+                              : 'Other value',
+                        ),
+                        selected: false,
+                        onSelected: saving
+                            ? null
+                            : (_) => Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (_) => ValueProgressEditor(
+                                    controller: widget.controller,
+                                    id: widget.id,
+                                    measure: measure,
+                                  ),
+                                ),
+                              ),
+                      ),
+                  ],
+                ),
+                const Text(
+                  'Choose how to measure this vision. Save before switching to keep edits.',
+                  style: TextStyle(height: 1.5),
+                ),
                 const SizedBox(height: 14),
                 const Text(
                   'Each milestone counts equally. Tick one when it happens; untick it if plans change. Save to update your vision.',

@@ -819,7 +819,9 @@ class VisionsScreen extends StatelessWidget {
                             Text(
                               v.progressPercent == null
                                   ? 'Milestones not set'
-                                  : '${v.progressPercent}% · ${v.milestonesDone}/${v.milestones.length} milestones',
+                                  : v.measure == ProgressMeasure.milestones
+                                  ? '${v.progressPercent}% · ${v.milestonesDone}/${v.milestones.length} milestones'
+                                  : '${v.progressPercent}% · ${valueText(v.valueTotal)} / ${valueText(v.valueTarget)} ${v.valueUnit}',
                               style: const TextStyle(fontSize: 12, height: 1.5),
                             ),
                             Text(

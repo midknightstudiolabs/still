@@ -12,6 +12,7 @@ import 'package:still/presentation/profile.dart';
 import 'package:still/presentation/question_flow.dart';
 import 'package:still/presentation/home.dart';
 import 'package:still/presentation/progress.dart';
+import 'package:still/presentation/value_progress.dart';
 import 'journeys_test.dart' show MemoryRepository;
 
 void main() {
@@ -284,6 +285,34 @@ void main() {
     );
     await capture(tester, '11-milestones-dark-large');
     expect(find.text('Save progress').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await c.saveValueProgress(id, ProgressMeasure.money, 1000000, 'PHP', [
+      ValueEntry(id: 'deposit', amount: 200000, when: DateTime(2026, 9, 29)),
+    ], DateTime(2027, 3, 12));
+    await mount(
+      tester,
+      Scaffold(
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: VisionProgress(controller: c, vision: c.vision(id)),
+        ),
+      ),
+      width: 360,
+    );
+    await capture(tester, '12-money-progress');
+    expect(find.text('20%'), findsOneWidget);
+    await mount(
+      tester,
+      ValueProgressEditor(
+        controller: c,
+        id: id,
+        measure: ProgressMeasure.money,
+      ),
+      width: 320,
+      scale: 1.6,
+      dark: true,
+    );
+    await capture(tester, '13-money-dark-large');
     expect(tester.takeException(), isNull);
   });
   test(

@@ -10,6 +10,51 @@ enum ProofType { note, photo, action, milestone }
 
 enum CheckResponse { stillMine, slowDown, later, letGo }
 
+enum ProgressMeasure { milestones, money, value }
+
+// Store hundredths as integers so deposits such as 0.10 + 0.20 are exact.
+int? parseValue(String text) {
+  final raw = text.trim();
+  if (!RegExp(r'^-?\d+(\.\d{1,2})?$').hasMatch(raw)) return null;
+  final parts = raw.replaceFirst('-', '').split('.');
+  final whole = int.tryParse(parts.first);
+  if (whole == null || whole > 1000000000) return null;
+  final result =
+      whole * 100 +
+      (parts.length == 1 ? 0 : int.parse(parts[1].padRight(2, '0')));
+  return raw.startsWith('-') ? -result : result;
+}
+
+String valueText(int value) {
+  final raw = value.abs();
+  final fraction = raw % 100;
+  return '${value < 0 ? '-' : ''}${raw ~/ 100}${fraction == 0 ? '' : '.${fraction.toString().padLeft(2, '0')}'}';
+}
+
+class ValueEntry {
+  ValueEntry({
+    required this.id,
+    required this.amount,
+    required this.when,
+    this.note = '',
+  });
+  final String id, note;
+  final int amount;
+  final DateTime when;
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'amount': amount,
+    'when': stamp(when),
+    'note': note,
+  };
+  factory ValueEntry.fromJson(Map<String, dynamic> j) => ValueEntry(
+    id: j['id'],
+    amount: j['amount'],
+    when: date(j['when']),
+    note: j['note'] ?? '',
+  );
+}
+
 DateTime date(dynamic value) => DateTime.parse(value as String);
 String? stamp(DateTime? value) => value?.toIso8601String();
 
@@ -49,8 +94,13 @@ class Vision {
     this.obstacle = '',
     this.targetDate,
     List<Milestone>? milestones,
+    this.measure = ProgressMeasure.milestones,
+    this.valueTarget = 0,
+    this.valueUnit = '',
+    List<ValueEntry>? entries,
   }) : updatedAt = updatedAt ?? createdAt,
-       milestones = milestones ?? [];
+       milestones = milestones ?? [],
+       entries = entries ?? [];
   final String id;
   String title, why, imagePath, area;
   VisionStatus status;
@@ -62,10 +112,17 @@ class Vision {
   String? nextMoveId, letGoReason;
   String obstacle;
   List<Milestone> milestones;
+  ProgressMeasure measure;
+  int valueTarget;
+  String valueUnit;
+  List<ValueEntry> entries;
+  int get valueTotal => entries.fold(0, (sum, e) => sum + e.amount);
+  double? get progressRatio => measure == ProgressMeasure.milestones
+      ? (milestones.isEmpty ? null : milestonesDone / milestones.length)
+      : (valueTarget <= 0 ? null : (valueTotal / valueTarget).clamp(0, 1));
   int get milestonesDone => milestones.where((m) => m.done).length;
-  int? get progressPercent => milestones.isEmpty
-      ? null
-      : (milestonesDone * 100 / milestones.length).round();
+  int? get progressPercent =>
+      progressRatio == null ? null : (progressRatio! * 100).floor();
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
@@ -83,6 +140,10 @@ class Vision {
     'obstacle': obstacle,
     'targetDate': stamp(targetDate),
     'milestones': milestones.map((m) => m.toJson()).toList(),
+    'measure': measure.name,
+    'valueTarget': valueTarget,
+    'valueUnit': valueUnit,
+    'entries': entries.map((e) => e.toJson()).toList(),
   };
   factory Vision.fromJson(Map<String, dynamic> j) => Vision(
     id: j['id'],
@@ -102,6 +163,12 @@ class Vision {
     targetDate: j['targetDate'] == null ? null : date(j['targetDate']),
     milestones: (j['milestones'] as List? ?? [])
         .map((m) => Milestone.fromJson(Map<String, dynamic>.from(m)))
+        .toList(),
+    measure: ProgressMeasure.values.byName(j['measure'] ?? 'milestones'),
+    valueTarget: j['valueTarget'] ?? 0,
+    valueUnit: j['valueUnit'] ?? '',
+    entries: (j['entries'] as List? ?? [])
+        .map((e) => ValueEntry.fromJson(Map<String, dynamic>.from(e)))
         .toList(),
   );
 }

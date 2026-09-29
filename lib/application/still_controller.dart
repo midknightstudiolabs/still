@@ -173,9 +173,44 @@ class StillController extends ChangeNotifier {
       }
       d.visions.firstWhere((v) => v.id == id)
         ..milestones = saved
+        ..measure = ProgressMeasure.milestones
         ..targetDate = targetDate == null
             ? null
             : DateTime(targetDate.year, targetDate.month, targetDate.day)
+        ..updatedAt = clock();
+    });
+  }
+
+  Future<void> saveValueProgress(
+    String id,
+    ProgressMeasure measure,
+    int target,
+    String unit,
+    List<ValueEntry> entries,
+    DateTime? targetDate,
+  ) {
+    final saved = List<ValueEntry>.of(entries);
+    return transact((d) {
+      final total = saved.fold<int>(0, (sum, e) => sum + e.amount);
+      if (measure == ProgressMeasure.milestones ||
+          target <= 0 ||
+          target > 100000000000 ||
+          unit.trim().isEmpty ||
+          unit.trim().length > 20 ||
+          total < 0 ||
+          total > 100000000000 ||
+          saved.any((e) => e.amount == 0 || e.amount.abs() > 100000000000) ||
+          saved.map((e) => e.id).toSet().length != saved.length) {
+        throw ArgumentError(
+          'Use a positive target and unit. Your total cannot be negative.',
+        );
+      }
+      d.visions.firstWhere((v) => v.id == id)
+        ..measure = measure
+        ..valueTarget = target
+        ..valueUnit = unit.trim()
+        ..entries = saved
+        ..targetDate = targetDate
         ..updatedAt = clock();
     });
   }
