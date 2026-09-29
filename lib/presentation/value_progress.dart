@@ -107,9 +107,7 @@ class _ValueProgressEditorState extends State<ValueProgressEditor> {
   @override
   Widget build(BuildContext context) {
     final goal = parseValue(target.text) ?? 0;
-    final percent = goal > 0
-        ? ((total / goal).clamp(0, 1) * 100).floor()
-        : null;
+    final percent = goal > 0 ? (total * 100 ~/ goal).clamp(0, 100) : null;
     return PopScope(
       canPop: !saving,
       child: Scaffold(

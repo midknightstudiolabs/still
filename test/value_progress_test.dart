@@ -10,6 +10,15 @@ void main() {
     'Money uses exact decimals, deposit total, withdrawals and a capped percentage',
     () async {
       expect(parseValue('0.10')! + parseValue('0.20')!, 30);
+      final exact = Vision(
+        id: 'exact',
+        title: 'Exact percentage',
+        createdAt: DateTime(2026),
+        measure: ProgressMeasure.money,
+        valueTarget: 10000,
+        entries: [ValueEntry(id: '29', amount: 2900, when: DateTime(2026))],
+      );
+      expect(exact.progressPercent, 29);
       for (final invalid in ['NaN', 'Infinity', '1,000', '0.001', '1e9']) {
         expect(parseValue(invalid), isNull);
       }

@@ -121,8 +121,11 @@ class Vision {
       ? (milestones.isEmpty ? null : milestonesDone / milestones.length)
       : (valueTarget <= 0 ? null : (valueTotal / valueTarget).clamp(0, 1));
   int get milestonesDone => milestones.where((m) => m.done).length;
-  int? get progressPercent =>
-      progressRatio == null ? null : (progressRatio! * 100).floor();
+  int? get progressPercent => measure == ProgressMeasure.milestones
+      ? (milestones.isEmpty ? null : milestonesDone * 100 ~/ milestones.length)
+      : (valueTarget <= 0
+            ? null
+            : (valueTotal * 100 ~/ valueTarget).clamp(0, 100));
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
