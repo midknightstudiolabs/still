@@ -47,8 +47,9 @@ class VisionDetail extends StatelessWidget {
         builder: (_) => VisionWizard(controller: controller, visionId: id),
       ),
     );
-    if (saved != null && context.mounted)
+    if (saved != null && context.mounted) {
       toast(context, 'Your changes are saved.');
+    }
   }
 
   Future<void> more(BuildContext context, Vision v) async {
