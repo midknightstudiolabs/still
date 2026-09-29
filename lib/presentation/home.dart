@@ -422,13 +422,14 @@ class _TodayScreenState extends State<TodayScreen> {
             children: [
               Row(
                 children: [
-                  const Eyebrow('Right now'),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: widget.onVisions,
-                    child: Text(
-                      '${active.length} of 3 active visions  ↗',
-                      style: const TextStyle(fontSize: 11, color: muted),
+                  const Expanded(child: Eyebrow('Right now')),
+                  Flexible(
+                    child: TextButton(
+                      onPressed: widget.onVisions,
+                      child: Text(
+                        '${active.length} of 3 active visions  ↗',
+                        style: const TextStyle(fontSize: 11, color: muted),
+                      ),
                     ),
                   ),
                 ],
@@ -601,14 +602,15 @@ class _TodayScreenState extends State<TodayScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 8,
             children: [
               TextButton.icon(
                 onPressed: () => showProof(context, c, v.id),
                 icon: const Icon(Icons.add_circle_outline, size: 15),
                 label: const Text('Add Proof', style: TextStyle(fontSize: 11)),
               ),
-              const Spacer(),
               TextButton(
                 onPressed: () => openVision(context, c, v.id),
                 child: Text(
@@ -807,8 +809,7 @@ class MemoriesScreen extends StatelessWidget {
         if (proofs.isEmpty)
           const EmptyMoment(
             title: 'Nothing to prove.\nJust things to keep.',
-            body:
-                'Add a note or photo to any vision.\nYour memories will find their way here.',
+            body: 'Add a note or photo to any vision.\nYour memories will find their way here.',
             icon: Icons.photo_album_outlined,
           )
         else

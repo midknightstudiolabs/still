@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:still/application/still_controller.dart';
@@ -47,26 +48,20 @@ void main() {
     expect(reopened.active.single.title, 'Japan with Mom & Dad');
     expect(reopened.active.single.why, 'Do this while we still can.');
   });
-  test(
-    'One Next Move, replacement history, completion is idempotent and becomes proof',
-    () async {
-      final id = await create();
-      await c.setMove(id, 'Research flights');
-      await c.setMove(id, 'Check passport expiry.');
-      expect(
-        c.data.moves.where((m) => m.status == MoveStatus.current).length,
-        1,
-      );
-      expect(c.data.moves.first.status, MoveStatus.replaced);
-      await c.completeMove(id);
-      await c.completeMove(id);
-      expect(c.move(c.vision(id)), isNull);
-      expect(c.data.moves.last.completedAt, now);
-      expect(c.proofs(id).single.note, 'Check passport expiry.');
-      await c.setMove(id, 'Save ₱1,000');
-      expect(c.data.moves.length, 3);
-    },
-  );
+  test('One Next Move, replacement history, completion is idempotent and becomes proof', () async {
+    final id = await create();
+    await c.setMove(id, 'Research flights');
+    await c.setMove(id, 'Check passport expiry.');
+    expect(c.data.moves.where((m) => m.status == MoveStatus.current).length, 1);
+    expect(c.data.moves.first.status, MoveStatus.replaced);
+    await c.completeMove(id);
+    await c.completeMove(id);
+    expect(c.move(c.vision(id)), isNull);
+    expect(c.data.moves.last.completedAt, now);
+    expect(c.proofs(id).single.note, 'Check passport expiry.');
+    await c.setMove(id, 'Save ₱1,000');
+    expect(c.data.moves.length, 3);
+  });
   test('Note and photo proof preserve the chosen date and vision', () async {
     final id = await create();
     final when = DateTime(2026, 9, 20);

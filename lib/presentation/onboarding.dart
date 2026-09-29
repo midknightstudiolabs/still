@@ -281,10 +281,8 @@ class _VisionWizardState extends State<VisionWizard> {
                             (r) => option(
                               rhythmName(r),
                               switch (r) {
-                                Rhythm.daily =>
-                                  'For something that benefits from frequent action.',
-                                Rhythm.weekly =>
-                                  'For bigger hopes. One meaningful step is enough.',
+                                Rhythm.daily => 'For something that benefits from frequent action.',
+                                Rhythm.weekly => 'For bigger hopes. One meaningful step is enough.',
                                 Rhythm.occasional =>
                                   'Stay connected, without constant action.',
                               },
@@ -298,14 +296,11 @@ class _VisionWizardState extends State<VisionWizard> {
                             (t) => option(
                               toneName(t),
                               switch (t) {
-                                Tone.grounded =>
-                                  'Keep one thing alive. One small move is enough.',
+                                Tone.grounded => 'Keep one thing alive. One small move is enough.',
                                 Tone.motivational =>
                                   'You’ve already started. Keep moving.',
-                                Tone.manifestation =>
-                                  'Picture it clearly. Then take one step toward it.',
-                                Tone.none =>
-                                  'Just your visions, next moves, and real-life moments.',
+                                Tone.manifestation => 'Picture it clearly. Then take one step toward it.',
+                                Tone.none => 'Just your visions, next moves, and real-life moments.',
                               },
                               tone == t,
                               () => setState(() => tone = t),

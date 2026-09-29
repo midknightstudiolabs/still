@@ -93,7 +93,7 @@ class _WelcomeState extends State<Welcome> {
                 children: [
                   Text('still', style: editorial(42, weight: FontWeight.w600)),
                   const Spacer(),
-                  const Eyebrow('A little closer'),
+                  const Flexible(child: Eyebrow('A little closer')),
                 ],
               ),
               const SizedBox(height: 28),

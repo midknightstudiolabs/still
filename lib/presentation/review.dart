@@ -131,8 +131,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               child: v == null
                   ? EmptyMoment(
                       title: 'You’re clear again.',
-                      body:
-                          'Keep what feels like you.\nCome back when you’re ready.',
+                      body: 'Keep what feels like you.\nCome back when you’re ready.',
                       action: FilledButton(
                         onPressed: close,
                         child: const Text('Back to today'),
