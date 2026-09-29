@@ -178,6 +178,47 @@ class AnswerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
+    if (description == null) {
+      final shape = RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      );
+      final labelStyle = TextStyle(
+        fontSize: 14,
+        height: 1.4,
+        color: selected ? c.onPrimaryContainer : c.onSurface,
+      );
+      final side = BorderSide(
+        color: selected ? c.primary : c.outline.withValues(alpha: .45),
+      );
+      if (multiple) {
+        return FilterChip(
+          label: Text(label),
+          selected: selected,
+          onSelected: onTap == null ? null : (_) => onTap!(),
+          showCheckmark: true,
+          labelStyle: labelStyle,
+          shape: shape,
+          side: side,
+          selectedColor: c.primaryContainer,
+          backgroundColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          materialTapTargetSize: MaterialTapTargetSize.padded,
+        );
+      }
+      return ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: onTap == null ? null : (_) => onTap!(),
+        showCheckmark: false,
+        labelStyle: labelStyle,
+        shape: shape,
+        side: side,
+        selectedColor: c.primaryContainer,
+        backgroundColor: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        materialTapTargetSize: MaterialTapTargetSize.padded,
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Semantics(
@@ -185,12 +226,14 @@ class AnswerCard extends StatelessWidget {
         button: true,
         label: label,
         child: Material(
-          color: selected ? c.primaryContainer : c.surfaceContainerLow,
+          color: selected
+              ? c.primary.withValues(alpha: .07)
+              : Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
-              color: selected ? c.primary : c.outline,
-              width: selected ? 2 : 1,
+              color: selected ? c.primary : c.outline.withValues(alpha: .35),
+              width: 1,
             ),
           ),
           child: InkWell(

@@ -135,7 +135,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Map<String, String> values,
     String current,
     ValueChanged<String> onSelect,
-  ) => Column(
+  ) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
     children: values.entries
         .map(
           (e) => AnswerCard(
@@ -199,18 +201,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : null,
         child: switch (step) {
           0 => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final r in lifeRoles)
-                AnswerCard(
-                  label: r,
-                  selected: roles.contains(r),
-                  multiple: true,
-                  onTap: saving
-                      ? null
-                      : () => setState(() {
-                          if (!roles.add(r)) roles.remove(r);
-                        }),
-                ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final r in lifeRoles)
+                    AnswerCard(
+                      label: r,
+                      selected: roles.contains(r),
+                      multiple: true,
+                      onTap: saving
+                          ? null
+                          : () => setState(() {
+                              if (!roles.add(r)) roles.remove(r);
+                            }),
+                    ),
+                ],
+              ),
               const SizedBox(height: 12),
               const Text(
                 'Four optional questions, then a review. You can save and close at any point.',

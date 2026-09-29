@@ -211,13 +211,20 @@ class _VisionWizardState extends State<VisionWizard> {
     ];
     final child = switch (step) {
       0 => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final a in areas)
-            AnswerCard(
-              label: a,
-              selected: area == a,
-              onTap: saving ? null : () => setState(() => area = a),
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final a in areas)
+                AnswerCard(
+                  label: a,
+                  selected: area == a,
+                  onTap: saving ? null : () => setState(() => area = a),
+                ),
+            ],
+          ),
           if (area == 'Something Else')
             TextField(
               controller: customArea,
@@ -253,15 +260,30 @@ class _VisionWizardState extends State<VisionWizard> {
         ),
       ),
       3 => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final b in barriers.entries)
-            AnswerCard(
-              label: b.value,
-              selected: obstacle == b.key,
-              description: obstacle == b.key && b.key.isNotEmpty
-                  ? barrierHelp(b.key)
-                  : null,
-              onTap: saving ? null : () => setState(() => obstacle = b.key),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final b in barriers.entries)
+                AnswerCard(
+                  label: b.value,
+                  selected: obstacle == b.key,
+                  onTap: saving ? null : () => setState(() => obstacle = b.key),
+                ),
+            ],
+          ),
+          if (obstacle.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Text(
+                barrierHelp(obstacle),
+                style: TextStyle(
+                  height: 1.6,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
         ],
       ),
@@ -270,16 +292,25 @@ class _VisionWizardState extends State<VisionWizard> {
         children: [
           Photo(image, height: 220),
           const SizedBox(height: 16),
-          for (var i = 0; i < photos.length; i++)
-            AnswerCard(
-              label: [
-                'A place to discover',
-                'Room to create',
-                'A calmer moment',
-              ][i],
-              selected: image == photos[i],
-              onTap: saving ? null : () => setState(() => image = photos[i]),
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var i = 0; i < photos.length; i++)
+                AnswerCard(
+                  label: [
+                    'A place to discover',
+                    'Room to create',
+                    'A calmer moment',
+                  ][i],
+                  selected: image == photos[i],
+                  onTap: saving
+                      ? null
+                      : () => setState(() => image = photos[i]),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: saving
                 ? null
