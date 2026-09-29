@@ -5,6 +5,7 @@ import '../domain/models.dart';
 import 'design.dart';
 import 'editors.dart';
 import 'onboarding.dart';
+import 'progress.dart';
 
 Future<void> showProof(
   BuildContext context,
@@ -61,6 +62,11 @@ class VisionDetail extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              leading: const Icon(Icons.checklist_rounded),
+              title: const Text('Milestones & date'),
+              onTap: () => Navigator.pop(context, 'progress'),
+            ),
+            ListTile(
               leading: const Icon(Icons.edit_outlined),
               title: const Text('Edit vision'),
               subtitle: const Text('Your answers, photo, rhythm, and tone'),
@@ -104,6 +110,10 @@ class VisionDetail extends StatelessWidget {
     );
     if (choice == null || !context.mounted) return;
     try {
+      if (choice == 'progress') {
+        await editProgress(context, controller, id);
+        return;
+      }
       if (choice == 'edit') {
         await edit(context);
         return;
@@ -213,6 +223,8 @@ class VisionDetail extends StatelessWidget {
                     style: const TextStyle(color: muted, height: 1.8),
                   ),
                 ],
+                const SizedBox(height: 26),
+                VisionProgress(controller: controller, vision: v),
                 const SizedBox(height: 26),
                 if (v.status == VisionStatus.completed)
                   Paper(

@@ -13,6 +13,24 @@ enum CheckResponse { stillMine, slowDown, later, letGo }
 DateTime date(dynamic value) => DateTime.parse(value as String);
 String? stamp(DateTime? value) => value?.toIso8601String();
 
+class Milestone {
+  Milestone({required this.id, required this.title, this.completedAt});
+  final String id;
+  String title;
+  DateTime? completedAt;
+  bool get done => completedAt != null;
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'completedAt': stamp(completedAt),
+  };
+  factory Milestone.fromJson(Map<String, dynamic> j) => Milestone(
+    id: j['id'],
+    title: j['title'],
+    completedAt: j['completedAt'] == null ? null : date(j['completedAt']),
+  );
+}
+
 class Vision {
   Vision({
     required this.id,
@@ -29,7 +47,10 @@ class Vision {
     this.nextMoveId,
     this.letGoReason,
     this.obstacle = '',
-  }) : updatedAt = updatedAt ?? createdAt;
+    this.targetDate,
+    List<Milestone>? milestones,
+  }) : updatedAt = updatedAt ?? createdAt,
+       milestones = milestones ?? [];
   final String id;
   String title, why, imagePath, area;
   VisionStatus status;
@@ -37,9 +58,14 @@ class Vision {
   Tone tone;
   final DateTime createdAt;
   DateTime updatedAt;
-  DateTime? completedAt;
+  DateTime? completedAt, targetDate;
   String? nextMoveId, letGoReason;
   String obstacle;
+  List<Milestone> milestones;
+  int get milestonesDone => milestones.where((m) => m.done).length;
+  int? get progressPercent => milestones.isEmpty
+      ? null
+      : (milestonesDone * 100 / milestones.length).round();
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
@@ -55,6 +81,8 @@ class Vision {
     'nextMoveId': nextMoveId,
     'letGoReason': letGoReason,
     'obstacle': obstacle,
+    'targetDate': stamp(targetDate),
+    'milestones': milestones.map((m) => m.toJson()).toList(),
   };
   factory Vision.fromJson(Map<String, dynamic> j) => Vision(
     id: j['id'],
@@ -71,6 +99,10 @@ class Vision {
     nextMoveId: j['nextMoveId'],
     letGoReason: j['letGoReason'],
     obstacle: j['obstacle'] ?? '',
+    targetDate: j['targetDate'] == null ? null : date(j['targetDate']),
+    milestones: (j['milestones'] as List? ?? [])
+        .map((m) => Milestone.fromJson(Map<String, dynamic>.from(m)))
+        .toList(),
   );
 }
 

@@ -6,6 +6,7 @@ import '../domain/guidance.dart';
 import 'design.dart';
 import 'detail.dart';
 import 'editors.dart';
+import 'progress.dart';
 import 'onboarding.dart';
 import 'review.dart';
 import 'profile.dart';
@@ -523,6 +524,8 @@ class _TodayScreenState extends State<TodayScreen> {
         key: ValueKey('${v.id}-${c.isResting(v.id)}'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          VisionProgress(controller: c, vision: v),
+          const SizedBox(height: 18),
           Paper(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -812,6 +815,19 @@ class VisionsScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(v.title, style: editorial(26)),
+                            const SizedBox(height: 7),
+                            Text(
+                              v.progressPercent == null
+                                  ? 'Milestones not set'
+                                  : '${v.progressPercent}% · ${v.milestonesDone}/${v.milestones.length} milestones',
+                              style: const TextStyle(fontSize: 12, height: 1.5),
+                            ),
+                            Text(
+                              v.targetDate == null
+                                  ? 'Started ${shortDate(v.createdAt)}'
+                                  : 'Target ${shortDate(v.targetDate!)}',
+                              style: const TextStyle(fontSize: 12, height: 1.5),
+                            ),
                             const SizedBox(height: 7),
                             Text(
                               rhythmName(v.rhythm),

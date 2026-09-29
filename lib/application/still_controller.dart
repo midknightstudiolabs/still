@@ -153,6 +153,33 @@ class StillController extends ChangeNotifier {
       ..updatedAt = clock();
   });
 
+  Future<void> saveProgress(
+    String id,
+    List<Milestone> milestones,
+    DateTime? targetDate,
+  ) {
+    // Snapshot the editor's mutable list before joining the save queue.
+    final saved = milestones
+        .map((m) => Milestone.fromJson(m.toJson()))
+        .toList();
+    return transact((d) {
+      if (saved.length > 20 ||
+          saved.any((m) => m.title.trim().isEmpty) ||
+          saved.map((m) => m.id).toSet().length != saved.length) {
+        throw ArgumentError('Use up to 20 milestones, each with a name.');
+      }
+      for (final m in saved) {
+        m.title = m.title.trim();
+      }
+      d.visions.firstWhere((v) => v.id == id)
+        ..milestones = saved
+        ..targetDate = targetDate == null
+            ? null
+            : DateTime(targetDate.year, targetDate.month, targetDate.day)
+        ..updatedAt = clock();
+    });
+  }
+
   Future<void> setMove(
     String visionId,
     String text, {

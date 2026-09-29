@@ -11,6 +11,7 @@ import 'package:still/presentation/onboarding.dart';
 import 'package:still/presentation/profile.dart';
 import 'package:still/presentation/question_flow.dart';
 import 'package:still/presentation/home.dart';
+import 'package:still/presentation/progress.dart';
 import 'journeys_test.dart' show MemoryRepository;
 
 void main() {
@@ -239,6 +240,50 @@ void main() {
     );
     await capture(tester, '09-today-progress');
     expect(find.text('See your story'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('Milestone progress and dates fit small and large-text screens', (
+    tester,
+  ) async {
+    final c = StillController(MemoryRepository());
+    await c.loadDemo();
+    final id = c.data.visions.first.id;
+    await c.saveProgress(id, [
+      Milestone(
+        id: '1',
+        title: 'Renew passports',
+        completedAt: DateTime(2026, 9, 29),
+      ),
+      Milestone(
+        id: '2',
+        title: 'Agree our travel budget',
+        completedAt: DateTime(2026, 9, 29),
+      ),
+      Milestone(id: '3', title: 'Book flights'),
+      Milestone(id: '4', title: 'Choose where to stay'),
+      Milestone(id: '5', title: 'Take the trip together'),
+    ], DateTime(2027, 3, 12));
+    await mount(
+      tester,
+      Scaffold(
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: VisionProgress(controller: c, vision: c.vision(id)),
+        ),
+      ),
+      width: 360,
+    );
+    await capture(tester, '10-milestone-progress');
+    expect(find.text('40%'), findsOneWidget);
+    await mount(
+      tester,
+      ProgressEditor(controller: c, id: id),
+      dark: true,
+      width: 320,
+      scale: 1.6,
+    );
+    await capture(tester, '11-milestones-dark-large');
+    expect(find.text('Save progress').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
   test(
