@@ -124,6 +124,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Record deposit or withdrawal'),
       160,
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.tap(find.text('Record deposit or withdrawal'));
     await tester.pumpAndSettle();
