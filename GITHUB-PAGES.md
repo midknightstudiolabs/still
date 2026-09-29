@@ -23,6 +23,6 @@ This does not create an App Store or Play Store installation. Browser storage is
 
 ## Validation
 
-This workflow has been prepared locally but has **not yet run on GitHub**. The original Windows environment passed static analysis but could not execute Flutter’s runtime. The first cloud run must pass before the hosted app is treated as verified. Deployment intentionally stops if a test or build fails.
+The workflow ran successfully on GitHub: analysis, all 16 tests, the release web build, and deployment passed. The live app is https://midknightstudiolabs.github.io/still/. [Successful run](https://github.com/midknightstudiolabs/still/actions/runs/36523999607). Deployment stops if a test or build fails.
 
 References: [GitHub Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [Flutter web deployment](https://docs.flutter.dev/deployment/web).

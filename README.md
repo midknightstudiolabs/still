@@ -22,9 +22,11 @@ A Flutter mobile MVP that keeps what matters from disappearing when life gets bu
 
 ## Validation status
 
-**Dart static analysis passed with no issues. All source and test files parse and are formatted. Dependencies resolved successfully.**
+**Live app: https://midknightstudiolabs.github.io/still/**
 
-Flutter 3.47.5 / Dart 3.13.4 were downloaded for validation. Windows application control blocked the runtime helper used to compile the Flutter command-line tool. Flutter tests, visual rendering, APK builds, iOS builds, and real-device photo picking therefore **have not been executed or verified in this environment**. This is source-ready work, not a verified installable binary. The test suite and verification checklist below are provided so that final runtime validation can be completed on a normal Flutter development machine.
+**Verified on GitHub Actions (Ubuntu): static analysis, all 16 automated tests, the release web build, and Pages deployment passed.** The published page, JavaScript, demo imagery, and fonts returned HTTP 200. [Successful deployment](https://github.com/midknightstudiolabs/still/actions/runs/36523999607).
+
+Flutter 3.47.5 / Dart 3.13.4 were used. Windows application control originally prevented local runtime testing; the Linux cloud runner subsequently executed the tests and web build successfully. Narrow-layout and test-interaction issues discovered in the first run were corrected before deployment. Native APK/iOS builds and real-device photo picking remain unverified.
 
 ## Run
 
@@ -104,7 +106,7 @@ Startup and resume compare `lastAppOpen` with the current time. After 14 days aw
 
 ## Verification checklist
 
-These are test cases, **not a claim of executed runtime tests** in this environment.
+The automated coverage below passed on GitHub Actions. Manual follow-ups remain to be checked on devices.
 
 | Journey | Automated coverage / manual follow-up |
 |---|---|
