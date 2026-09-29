@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../application/still_controller.dart';
 import '../domain/models.dart';
+import '../domain/guidance.dart';
 import 'design.dart';
 import 'detail.dart';
 import 'editors.dart';
 import 'onboarding.dart';
 import 'review.dart';
+import 'profile.dart';
 
 Future<void> newVision(BuildContext context, StillController c) async {
   final id = await Navigator.push<String>(
@@ -529,6 +531,19 @@ class _TodayScreenState extends State<TodayScreen> {
                             'What would make this a little more real?',
                   style: const TextStyle(fontSize: 16, height: 1.55),
                 ),
+                if (move != null &&
+                    move.cue.isNotEmpty &&
+                    !resting.contains(v.id)) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'When or if: ${move.cue}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: muted,
+                      height: 1.6,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -809,7 +824,8 @@ class MemoriesScreen extends StatelessWidget {
         if (proofs.isEmpty)
           const EmptyMoment(
             title: 'Nothing to prove.\nJust things to keep.',
-            body: 'Add a note or photo to any vision.\nYour memories will find their way here.',
+            body:
+                'Add a note or photo to any vision.\nYour memories will find their way here.',
             icon: Icons.photo_album_outlined,
           )
         else
@@ -840,13 +856,50 @@ class SettingsScreen extends StatelessWidget {
       const Eyebrow('Make yourself at home'),
       const SizedBox(height: 16),
       Text('Your kind of quiet.', style: editorial(42)),
+      const SizedBox(height: 20),
+      ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.person_outline),
+        title: const Text('A little about you'),
+        subtitle: const Text(
+          'Life roles, priorities, obstacles, and time for a small step. Optional and editable.',
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => ProfileScreen(controller: controller),
+          ),
+        ),
+      ),
+      ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.menu_book_outlined),
+        title: const Text('Why these questions'),
+        subtitle: const Text(
+          'Research, how your answers are used, and the limits of the evidence.',
+        ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const ResearchScreen()),
+        ),
+      ),
       const SizedBox(height: 30),
       const Eyebrow('How Still speaks'),
+      const SizedBox(height: 10),
+      const Text(
+        'Choose the wording that feels useful. Tone changes the language, not your goals or how progress is measured.',
+        style: TextStyle(color: muted, height: 1.6),
+      ),
       const SizedBox(height: 14),
       ...Tone.values.map(
         (t) => RadioListTile<Tone>(
           contentPadding: EdgeInsets.zero,
           title: Text(toneName(t), style: const TextStyle(fontSize: 14)),
+          subtitle: Text(
+            '${toneDescription(t)}\n\nToday preview: “${toneExample(t)}”',
+            style: const TextStyle(fontSize: 12, height: 1.6),
+          ),
           value: t,
           groupValue: controller.data.preferences.tone,
           onChanged: (t) =>
@@ -903,7 +956,7 @@ class SettingsScreen extends StatelessWidget {
       ),
       const SizedBox(height: 14),
       const Text(
-        'Version 1.0 · Your space stays on this device.\nNo account. No streaks. No catching up.',
+        'Version 1.1 · Your space stays on this device.\nOptional personal guidance. No account. No streaks.',
         style: TextStyle(color: muted, fontSize: 11, height: 1.9),
       ),
       const Divider(),

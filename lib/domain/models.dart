@@ -28,6 +28,7 @@ class Vision {
     this.completedAt,
     this.nextMoveId,
     this.letGoReason,
+    this.obstacle = '',
   }) : updatedAt = updatedAt ?? createdAt;
   final String id;
   String title, why, imagePath, area;
@@ -38,6 +39,7 @@ class Vision {
   DateTime updatedAt;
   DateTime? completedAt;
   String? nextMoveId, letGoReason;
+  String obstacle;
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
@@ -52,6 +54,7 @@ class Vision {
     'completedAt': stamp(completedAt),
     'nextMoveId': nextMoveId,
     'letGoReason': letGoReason,
+    'obstacle': obstacle,
   };
   factory Vision.fromJson(Map<String, dynamic> j) => Vision(
     id: j['id'],
@@ -67,6 +70,7 @@ class Vision {
     completedAt: j['completedAt'] == null ? null : date(j['completedAt']),
     nextMoveId: j['nextMoveId'],
     letGoReason: j['letGoReason'],
+    obstacle: j['obstacle'] ?? '',
   );
 }
 
@@ -78,8 +82,10 @@ class NextMove {
     required this.createdAt,
     this.completedAt,
     this.status = MoveStatus.current,
+    this.cue = '',
   });
   final String id, visionId, text;
+  final String cue;
   final DateTime createdAt;
   DateTime? completedAt;
   MoveStatus status;
@@ -87,6 +93,7 @@ class NextMove {
     'id': id,
     'visionId': visionId,
     'text': text,
+    'cue': cue,
     'createdAt': stamp(createdAt),
     'completedAt': stamp(completedAt),
     'status': status.name,
@@ -95,6 +102,7 @@ class NextMove {
     id: j['id'],
     visionId: j['visionId'],
     text: j['text'],
+    cue: j['cue'] ?? '',
     createdAt: date(j['createdAt']),
     completedAt: j['completedAt'] == null ? null : date(j['completedAt']),
     status: MoveStatus.values.byName(j['status']),
@@ -157,6 +165,7 @@ class CheckIn {
 }
 
 class UserPreferences {
+  UserProfile profile = UserProfile();
   Tone tone = Tone.grounded;
   String theme = 'system';
   DateTime? lastAppOpen, lastReview;
@@ -169,6 +178,7 @@ class UserPreferences {
     'onboardingComplete': onboardingComplete,
     'notificationsEnabled': notificationsEnabled,
     'demo': demo,
+    'profile': profile.toJson(),
   };
   factory UserPreferences.fromJson(Map<String, dynamic> j) => UserPreferences()
     ..tone = Tone.values.byName(j['tone'])
@@ -177,8 +187,36 @@ class UserPreferences {
     ..lastReview = j['lastReview'] == null ? null : date(j['lastReview'])
     ..onboardingComplete = j['onboardingComplete']
     ..notificationsEnabled = j['notificationsEnabled'] ?? false
-    ..demo = j['demo'] ?? false;
+    ..demo = j['demo'] ?? false
+    ..profile = UserProfile.fromJson(j['profile'] ?? <String, dynamic>{});
   UserPreferences();
+}
+
+class UserProfile {
+  UserProfile({
+    List<String>? roles,
+    this.priority = '',
+    this.barrier = '',
+    this.capacity = '',
+    this.saved = false,
+  }) : roles = roles ?? [];
+  final List<String> roles;
+  final String priority, barrier, capacity;
+  final bool saved;
+  Map<String, dynamic> toJson() => {
+    'roles': roles,
+    'priority': priority,
+    'barrier': barrier,
+    'capacity': capacity,
+    'saved': saved,
+  };
+  factory UserProfile.fromJson(Map<String, dynamic> j) => UserProfile(
+    roles: List<String>.from(j['roles'] ?? []),
+    priority: j['priority'] ?? '',
+    barrier: j['barrier'] ?? '',
+    capacity: j['capacity'] ?? '',
+    saved: j['saved'] ?? false,
+  );
 }
 
 class AppData {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../application/still_controller.dart';
 import '../domain/models.dart';
+import '../domain/guidance.dart';
 import 'design.dart';
 import 'editors.dart';
 
@@ -15,7 +16,11 @@ class VisionWizard extends StatefulWidget {
 
 class _VisionWizardState extends State<VisionWizard> {
   int step = 0;
-  String area = 'Travel', image = photos.first;
+  late String area = widget.controller.data.preferences.profile.priority.isEmpty
+      ? 'Travel'
+      : widget.controller.data.preferences.profile.priority;
+  String image = photos.first;
+  late String obstacle = widget.controller.data.preferences.profile.barrier;
   final customArea = TextEditingController(),
       title = TextEditingController(),
       why = TextEditingController();
@@ -56,6 +61,7 @@ class _VisionWizardState extends State<VisionWizard> {
         tone: tone,
         replaceActiveId: replace,
         saveForLater: later,
+        obstacle: obstacle,
       );
       if (!mounted) return;
       await sheet(
@@ -77,6 +83,7 @@ class _VisionWizardState extends State<VisionWizard> {
       'What matters to\nyou right now?',
       'What are you hoping\nbecomes real?',
       'Why does\nthis matter?',
+      'What might get\nin the way?',
       'Give it\na little life.',
       'How often does this\nneed attention?',
       'How should this\napp talk to you?',
@@ -84,7 +91,8 @@ class _VisionWizardState extends State<VisionWizard> {
     final subtitles = [
       'You don’t need your whole life figured out. Start with what feels important.',
       'Big or small. Specific or still taking shape. Make it yours.',
-      'A few words to come back to. This one is optional.',
+      'What would be different in your life? Is this something you want for yourself? A few words are enough, and you can skip this.',
+      'Choose what fits this vision today. This is a situation to plan around, not a label for you.',
       'Choose a photo that brings you back to the feeling.',
       'Choose a rhythm, not a deadline.',
       'A little support, in your own language.',
@@ -107,7 +115,7 @@ class _VisionWizardState extends State<VisionWizard> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 24),
-            child: Center(child: Eyebrow('${step + 1} of 6')),
+            child: Center(child: Eyebrow('${step + 1} of 7')),
           ),
         ],
       ),
@@ -123,7 +131,7 @@ class _VisionWizardState extends State<VisionWizard> {
                 ),
                 child: Row(
                   children: List.generate(
-                    6,
+                    7,
                     (i) => Expanded(
                       child: Container(
                         margin: const EdgeInsets.only(right: 6),
@@ -199,7 +207,14 @@ class _VisionWizardState extends State<VisionWizard> {
                               ),
                             ),
                         ],
-                        if (step == 1)
+                        if (step == 1) ...[
+                          Text(
+                            visionExample(
+                              widget.controller.data.preferences.profile,
+                            ),
+                            style: const TextStyle(color: muted, height: 1.6),
+                          ),
+                          const SizedBox(height: 14),
                           TextField(
                             controller: title,
                             maxLength: 100,
@@ -209,9 +224,10 @@ class _VisionWizardState extends State<VisionWizard> {
                             style: editorial(29),
                             onChanged: (_) => setState(() {}),
                             decoration: const InputDecoration(
-                              hintText: 'Take my parents to Japan.',
+                              hintText: 'A vision in your own words',
                             ),
                           ),
+                        ],
                         if (step == 2)
                           TextField(
                             controller: why,
@@ -225,6 +241,18 @@ class _VisionWizardState extends State<VisionWizard> {
                             ),
                           ),
                         if (step == 3) ...[
+                          ...barriers.entries.map(
+                            (b) => option(
+                              b.value,
+                              b.key.isEmpty
+                                  ? 'Keep this open. You can change it when planning a move.'
+                                  : barrierHelp(b.key),
+                              obstacle == b.key,
+                              () => setState(() => obstacle = b.key),
+                            ),
+                          ),
+                        ],
+                        if (step == 4) ...[
                           Photo(image, height: 250),
                           const SizedBox(height: 16),
                           Row(
@@ -276,13 +304,15 @@ class _VisionWizardState extends State<VisionWizard> {
                             ),
                           ),
                         ],
-                        if (step == 4)
+                        if (step == 5)
                           ...Rhythm.values.map(
                             (r) => option(
                               rhythmName(r),
                               switch (r) {
-                                Rhythm.daily => 'For something that benefits from frequent action.',
-                                Rhythm.weekly => 'For bigger hopes. One meaningful step is enough.',
+                                Rhythm.daily =>
+                                  'For something that benefits from frequent action.',
+                                Rhythm.weekly =>
+                                  'For bigger hopes. One meaningful step is enough.',
                                 Rhythm.occasional =>
                                   'Stay connected, without constant action.',
                               },
@@ -291,17 +321,11 @@ class _VisionWizardState extends State<VisionWizard> {
                               badge: r == Rhythm.weekly ? 'RECOMMENDED' : null,
                             ),
                           ),
-                        if (step == 5)
+                        if (step == 6)
                           ...Tone.values.map(
                             (t) => option(
                               toneName(t),
-                              switch (t) {
-                                Tone.grounded => 'Keep one thing alive. One small move is enough.',
-                                Tone.motivational =>
-                                  'You’ve already started. Keep moving.',
-                                Tone.manifestation => 'Picture it clearly. Then take one step toward it.',
-                                Tone.none => 'Just your visions, next moves, and real-life moments.',
-                              },
+                              '${toneDescription(t)}\n\nToday preview: “${toneExample(t)}”',
                               tone == t,
                               () => setState(() => tone = t),
                             ),
@@ -322,7 +346,7 @@ class _VisionWizardState extends State<VisionWizard> {
                           saving || (step == 1 && title.text.trim().isEmpty)
                           ? null
                           : () {
-                              if (step == 5) {
+                              if (step == 6) {
                                 finish();
                               } else {
                                 FocusScope.of(context).unfocus();
@@ -332,7 +356,7 @@ class _VisionWizardState extends State<VisionWizard> {
                       child: Text(
                         saving
                             ? 'Making room…'
-                            : step == 5
+                            : step == 6
                             ? 'Keep this close'
                             : step == 2 && why.text.isEmpty
                             ? 'Continue · optional'

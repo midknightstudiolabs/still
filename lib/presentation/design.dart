@@ -15,6 +15,7 @@ const photos = [
   'assets/images/calm.jpg',
 ];
 const areas = [
+  'Learning / Study',
   'Travel',
   'Career / Business',
   'Money',
@@ -68,8 +69,9 @@ ThemeData stillTheme(Brightness brightness) {
     colorScheme: scheme,
     scaffoldBackgroundColor: scheme.surface,
     fontFamily: 'Manrope',
-    textTheme: ThemeData(brightness: brightness).textTheme
-        .apply(fontFamily: 'Manrope'),
+    textTheme: ThemeData(
+      brightness: brightness,
+    ).textTheme.apply(fontFamily: 'Manrope'),
     appBarTheme: AppBarTheme(
       backgroundColor: scheme.surface,
       surfaceTintColor: Colors.transparent,

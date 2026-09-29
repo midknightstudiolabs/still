@@ -5,7 +5,7 @@ import 'application/still_controller.dart';
 import 'data/repository.dart';
 import 'presentation/design.dart';
 import 'presentation/home.dart';
-import 'presentation/onboarding.dart';
+import 'presentation/profile.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -142,7 +142,7 @@ class _WelcomeState extends State<Welcome> {
                     : () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => VisionWizard(
+                          builder: (_) => ProfileScreen(
                             controller: widget.controller,
                             first: true,
                           ),

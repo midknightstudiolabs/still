@@ -94,6 +94,7 @@ class StillController extends ChangeNotifier {
     required Tone tone,
     String? replaceActiveId,
     bool saveForLater = false,
+    String obstacle = '',
   }) async {
     final id = _id();
     await transact((d) {
@@ -117,6 +118,7 @@ class StillController extends ChangeNotifier {
           area: area,
           rhythm: rhythm,
           tone: tone,
+          obstacle: obstacle,
           createdAt: clock(),
           status: saveForLater ? VisionStatus.later : VisionStatus.active,
         ),
@@ -128,9 +130,15 @@ class StillController extends ChangeNotifier {
     return id;
   }
 
-  Future<void> setMove(String visionId, String text) => transact((d) {
+  Future<void> setMove(
+    String visionId,
+    String text, {
+    String cue = '',
+    String? obstacle,
+  }) => transact((d) {
     if (text.trim().isEmpty) throw ArgumentError('What’s one small move?');
     final v = d.visions.firstWhere((v) => v.id == visionId);
+    if (obstacle != null) v.obstacle = obstacle;
     for (final m in d.moves.where(
       (m) => m.visionId == visionId && m.status == MoveStatus.current,
     )) {
@@ -140,6 +148,7 @@ class StillController extends ChangeNotifier {
       id: _id(),
       visionId: visionId,
       text: text.trim(),
+      cue: cue.trim(),
       createdAt: clock(),
     );
     d.moves.add(m);
@@ -265,6 +274,9 @@ class StillController extends ChangeNotifier {
       }
     }
     if (theme != null) d.preferences.theme = theme;
+  });
+  Future<void> saveProfile(UserProfile profile) => transact((d) {
+    d.preferences.profile = UserProfile.fromJson(profile.toJson());
   });
   Future<void> simulateReturn() async {
     await transact(

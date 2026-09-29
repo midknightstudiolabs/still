@@ -257,6 +257,13 @@ class VisionDetail extends StatelessWidget {
                           move?.text ?? 'A little room for what comes next.',
                           style: const TextStyle(fontSize: 17, height: 1.5),
                         ),
+                        if (move != null && move.cue.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            'When or if: ${move.cue}',
+                            style: const TextStyle(color: muted, height: 1.6),
+                          ),
+                        ],
                         const SizedBox(height: 18),
                         Wrap(
                           spacing: 10,

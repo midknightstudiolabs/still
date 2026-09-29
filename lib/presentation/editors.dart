@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../application/still_controller.dart';
+import '../domain/guidance.dart';
 import 'design.dart';
 
 class MoveEditor extends StatefulWidget {
@@ -17,10 +18,15 @@ class MoveEditor extends StatefulWidget {
 
 class _MoveEditorState extends State<MoveEditor> {
   final text = TextEditingController();
+  final cue = TextEditingController();
+  late String obstacle;
   bool saving = false;
   @override
   void initState() {
     super.initState();
+    final vision = widget.controller.vision(widget.visionId);
+    obstacle = vision.obstacle;
+    cue.text = widget.controller.move(vision)?.cue ?? '';
     text.text =
         widget.controller
             .move(widget.controller.vision(widget.visionId))
@@ -31,6 +37,7 @@ class _MoveEditorState extends State<MoveEditor> {
   @override
   void dispose() {
     text.dispose();
+    cue.dispose();
     super.dispose();
   }
 
@@ -38,7 +45,12 @@ class _MoveEditorState extends State<MoveEditor> {
     if (text.text.trim().isEmpty || saving) return;
     setState(() => saving = true);
     try {
-      await widget.controller.setMove(widget.visionId, text.text);
+      await widget.controller.setMove(
+        widget.visionId,
+        text.text,
+        cue: cue.text,
+        obstacle: obstacle,
+      );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -64,6 +76,66 @@ class _MoveEditorState extends State<MoveEditor> {
           style: TextStyle(color: muted, height: 1.6),
         ),
         const SizedBox(height: 24),
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          title: const Text(
+            'Help me find a starting point',
+            style: TextStyle(fontSize: 14),
+          ),
+          subtitle: const Text(
+            'Optional ideas based on your choices',
+            style: TextStyle(fontSize: 12),
+          ),
+          children: [
+            DropdownButtonFormField<String>(
+              initialValue: barriers.containsKey(obstacle) ? obstacle : '',
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'What gets in the way of this vision?',
+              ),
+              items: barriers.entries
+                  .map(
+                    (b) => DropdownMenuItem(
+                      value: b.key,
+                      child: Text(b.value, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
+              onChanged: saving
+                  ? null
+                  : (v) => setState(() => obstacle = v ?? ''),
+            ),
+            const SizedBox(height: 14),
+            Text(barrierHelp(obstacle), style: const TextStyle(height: 1.6)),
+            const SizedBox(height: 12),
+            Text(
+              capacityHelp(widget.controller.data.preferences.profile.capacity),
+              style: const TextStyle(height: 1.6, color: muted),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Example: ${suggestedMove(widget.controller.vision(widget.visionId).area, obstacle)}',
+              style: const TextStyle(height: 1.6),
+            ),
+            TextButton(
+              onPressed: saving
+                  ? null
+                  : () => setState(() {
+                      text.text = suggestedMove(
+                        widget.controller.vision(widget.visionId).area,
+                        obstacle,
+                      );
+                    }),
+              child: const Text('Use this as a starting point'),
+            ),
+            const Text(
+              'Preset example, not AI. Edit it to fit your vision. Nothing is saved until you choose Keep this move.',
+              style: TextStyle(fontSize: 11, color: muted, height: 1.5),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+        const SizedBox(height: 14),
         TextField(
           controller: text,
           autofocus: true,
@@ -73,6 +145,19 @@ class _MoveEditorState extends State<MoveEditor> {
           onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(
             hintText: 'Check passport expiry. Save a little. Ask someone.',
+          ),
+        ),
+        const SizedBox(height: 18),
+        TextField(
+          controller: cue,
+          maxLength: 140,
+          minLines: 1,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: 'When or if… (optional)',
+            hintText: 'After breakfast on Saturday, at my desk',
+            helperText: 'A cue for this step, not a scheduled reminder.',
+            helperMaxLines: 2,
           ),
         ),
         const SizedBox(height: 18),
