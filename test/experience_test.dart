@@ -35,6 +35,9 @@ void main() {
   });
   setUpAll(() async {
     await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    await (FontLoader(
       'Manrope',
     )..addFont(rootBundle.load('assets/fonts/Manrope.ttf'))).load();
     await (FontLoader(
@@ -74,6 +77,7 @@ void main() {
       RepaintBoundary(
         key: shotKey,
         child: MaterialApp(
+          debugShowCheckedModeBanner: false,
           theme: stillTheme(dark ? Brightness.dark : Brightness.light),
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(
@@ -85,6 +89,13 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      final context = tester.element(find.byType(Scaffold).first);
+      for (final path in photos) {
+        await precacheImage(AssetImage(path), context);
+      }
+    });
     await tester.pumpAndSettle();
   }
 
@@ -104,8 +115,8 @@ void main() {
       await mount(tester, ProfileScreen(controller: c));
       expect(find.text('Step 1 of 5 · Optional'), findsOneWidget);
       expect(find.text('What would you like more room for?'), findsNothing);
-      await tap(tester, 'Student');
       await capture(tester, '01-profile-light');
+      await tap(tester, 'Student');
       await tap(tester, 'Continue');
       await tap(tester, 'Learning / Study');
       await tester.tap(find.byTooltip('Back'));
@@ -210,6 +221,9 @@ void main() {
     final c = StillController(MemoryRepository());
     await c.initialize();
     await c.loadDemo();
+    for (final v in c.active.skip(1).toList()) {
+      await c.setStatus(v.id, VisionStatus.later);
+    }
     await mount(
       tester,
       Scaffold(
@@ -221,6 +235,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Your latest moment'.toUpperCase()),
       180,
+      scrollable: find.byType(Scrollable).first,
     );
     await capture(tester, '09-today-progress');
     expect(find.text('See your story'), findsOneWidget);

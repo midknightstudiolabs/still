@@ -57,12 +57,20 @@ TextStyle editorial(
 
 ThemeData stillTheme(Brightness brightness) {
   final dark = brightness == Brightness.dark;
-  final scheme = ColorScheme.fromSeed(
-    seedColor: pine,
-    brightness: brightness,
-    surface: dark ? const Color(0xFF1C2420) : cream,
-    primary: dark ? const Color(0xFFBCCFBE) : pine,
-  );
+  final scheme =
+      ColorScheme.fromSeed(
+        seedColor: pine,
+        brightness: brightness,
+        surface: dark ? const Color(0xFF1C2420) : cream,
+        primary: dark ? const Color(0xFFBCCFBE) : pine,
+      ).copyWith(
+        primaryContainer: dark
+            ? const Color(0xFF30483C)
+            : const Color(0xFFE4ECE4),
+        onPrimaryContainer: dark
+            ? const Color(0xFFE8F1E8)
+            : const Color(0xFF223E30),
+      );
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,

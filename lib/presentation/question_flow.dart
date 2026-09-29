@@ -88,7 +88,12 @@ class QuestionFlow extends StatelessWidget {
                       Semantics(
                         header: true,
                         liveRegion: true,
-                        child: Text(title, style: editorial(38)),
+                        child: Text(
+                          title,
+                          style: editorial(
+                            MediaQuery.sizeOf(context).width < 360 ? 30 : 38,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
