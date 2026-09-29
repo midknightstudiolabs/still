@@ -1,0 +1,27 @@
+name: still
+description: A quiet place for what matters. Weekly direction, daily visibility, no daily pressure.
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: '>=3.13.0 <4.0.0'
+  flutter: '>=3.47.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.5.3
+  image_picker: ^1.2.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope.ttf
+    - family: Cormorant
+      fonts:
+        - asset: assets/fonts/CormorantGaramond.ttf
