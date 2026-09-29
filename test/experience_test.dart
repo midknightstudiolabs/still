@@ -13,6 +13,25 @@ import 'package:still/presentation/question_flow.dart';
 import 'journeys_test.dart' show MemoryRepository;
 
 void main() {
+  test('Question foregrounds meet ordinary text contrast in both themes', () {
+    double ratio(Color a, Color b) {
+      final x = a.computeLuminance(), y = b.computeLuminance();
+      return x > y ? (x + .05) / (y + .05) : (y + .05) / (x + .05);
+    }
+
+    for (final brightness in Brightness.values) {
+      final c = stillTheme(brightness).colorScheme;
+      expect(ratio(c.onSurfaceVariant, c.surface), greaterThanOrEqualTo(4.5));
+      expect(
+        ratio(c.onSurface, c.surfaceContainerLow),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        ratio(c.onPrimaryContainer, c.primaryContainer),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
   setUpAll(() async {
     await (FontLoader(
       'Manrope',
@@ -26,16 +45,16 @@ void main() {
     await tester.pumpAndSettle();
     final boundary =
         shotKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-    final picture = await boundary.toImage(pixelRatio: 1);
-    final bytes = await picture.toByteData(format: ui.ImageByteFormat.png);
     await tester.runAsync(() async {
+      final picture = await boundary.toImage(pixelRatio: 1);
+      final bytes = await picture.toByteData(format: ui.ImageByteFormat.png);
       final directory = Directory('build/ux-previews');
       await directory.create(recursive: true);
       await File(
         '${directory.path}/$name.png',
       ).writeAsBytes(bytes!.buffer.asUint8List());
+      picture.dispose();
     });
-    picture.dispose();
   }
 
   Future<void> mount(
