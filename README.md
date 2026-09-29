@@ -8,7 +8,10 @@ A Flutter mobile MVP that keeps what matters from disappearing when life gets bu
 
 - iOS and Android project runners, with a web runner for convenient development.
 - Warm ivory and forest-green design, bundled editorial photography, Manrope and Cormorant typography, light/dark/system themes, and quiet transitions.
-- Welcome screen with explicit demo entry; six short onboarding steps; photo-library selection and offline suggested images.
+- Welcome screen with explicit demo entry; an optional personal profile; seven vision-creation steps; photo-library selection and offline suggested images.
+- Optional multiple life roles, a user-selected priority, situational obstacles, and realistic time preferences. Settings supports editing and clearing these answers without deleting the board.
+- Editable, rule-based Next Move examples, per-vision obstacles, and optional when/if action cues. No AI or personality assessment.
+- Tone descriptions with actual Today previews, plus an in-app research explanation. See [research and guidance rules](RESEARCH.md) for sources, implementation choices, and evidence limits.
 - One featured vision at a time, horizontal swiping, a single Next Move, proof count, and a consequence-free “Not today.”
 - Vision collection grouped into Right Now, Later, It Happened, and Let Go.
 - A maximum of three active visions, with an atomic swap-to-Later flow when adding or reactivating a fourth.
@@ -24,7 +27,7 @@ A Flutter mobile MVP that keeps what matters from disappearing when life gets bu
 
 **Live app: https://midknightstudiolabs.github.io/still/**
 
-**Verified on GitHub Actions (Ubuntu): static analysis, all 16 automated tests, the release web build, and Pages deployment passed.** The published page, JavaScript, demo imagery, and fonts returned HTTP 200. [Successful deployment](https://github.com/midknightstudiolabs/still/actions/runs/36523999607).
+**Version 1.1 verified on GitHub Actions (Ubuntu): static analysis, all automated tests, the release web build, and Pages deployment passed.** The live version endpoint reports 1.1.0 build 2, and the published JavaScript contains the profile, research, and tone updates. [Successful deployment](https://github.com/midknightstudiolabs/still/actions/runs/36526736282).
 
 Flutter 3.47.5 / Dart 3.13.4 were used. Windows application control originally prevented local runtime testing; the Linux cloud runner subsequently executed the tests and web build successfully. Narrow-layout and test-interaction issues discovered in the first run were corrected before deployment. Native APK/iOS builds and real-device photo picking remain unverified.
 
@@ -69,7 +72,9 @@ lib/
   data/demo.dart                     Explicit sample data
   application/still_controller.dart  Invariants, commands, persistence, return detection
   presentation/design.dart           Theme, bundled-image rendering, photo picker, shared UI
-  presentation/onboarding.dart       Six-step creation flow
+  domain/guidance.dart               Explicit examples and barrier guidance
+  presentation/profile.dart          Optional profile and research explanation
+  presentation/onboarding.dart       Seven-step vision creation flow
   presentation/home.dart             Today, Visions, Memories, Settings, lifecycle handling
   presentation/detail.dart           Vision timeline, move history, status changes
   presentation/editors.dart          Next Move, Proof, room-making, Let Go sheets
@@ -77,7 +82,8 @@ lib/
   main.dart                         Startup, data-load protection, app composition
 test/
   journeys_test.dart                 Domain journeys, persistence, concurrency, failures
-  ui_test.dart                       First-vision journey and consequence-free Not today
+  ui_test.dart                       Onboarding, profile, suggested moves, tone descriptions, Not today
+  guidance_test.dart                 Legacy data, profiles, action cues, failed saves
 android/                            Kotlin/Gradle runner
 ios/                                Swift/Xcode runner and CocoaPods configuration
 web/                                Optional browser development runner
