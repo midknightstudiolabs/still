@@ -71,8 +71,9 @@ class QuestionFlow extends StatelessWidget {
                       value: step / total,
                       minHeight: 5,
                       borderRadius: BorderRadius.circular(10),
-                      semanticsLabel: '$section progress',
-                      semanticsValue: '$step of $total steps completed',
+                      semanticsLabel:
+                          '$section progress. $step of $total steps completed',
+                      semanticsValue: '${(100 * step / total).round()}',
                     ),
                   ],
                 ),

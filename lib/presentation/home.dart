@@ -529,8 +529,7 @@ class _TodayScreenState extends State<TodayScreen> {
               children: [
                 Row(
                   children: [
-                    const Eyebrow('Your next small move'),
-                    const Spacer(),
+                    const Expanded(child: Eyebrow('Your next small move')),
                     SizedBox(
                       width: 48,
                       height: 48,

@@ -10,6 +10,7 @@ import 'package:still/presentation/design.dart';
 import 'package:still/presentation/onboarding.dart';
 import 'package:still/presentation/profile.dart';
 import 'package:still/presentation/question_flow.dart';
+import 'package:still/presentation/home.dart';
 import 'journeys_test.dart' show MemoryRepository;
 
 void main() {
@@ -205,6 +206,26 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets('Today shows real progress on a mobile screen', (tester) async {
+    final c = StillController(MemoryRepository());
+    await c.initialize();
+    await c.loadDemo();
+    await mount(
+      tester,
+      Scaffold(
+        body: TodayScreen(controller: c, onVisions: () {}),
+      ),
+      width: 360,
+    );
+    await capture(tester, '08-today-mobile');
+    await tester.scrollUntilVisible(
+      find.text('Your latest moment'.toUpperCase()),
+      180,
+    );
+    await capture(tester, '09-today-progress');
+    expect(find.text('See your story'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   test(
     'Draft failures preserve committed data and drafts clear only after successful save',
     () async {
