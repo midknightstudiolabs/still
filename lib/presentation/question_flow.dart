@@ -15,12 +15,13 @@ class QuestionFlow extends StatelessWidget {
     required this.onClose,
     required this.onContinue,
     this.button = 'Continue',
+    this.closeLabel = 'Save and close',
     this.busy = false,
     this.optional = false,
     this.onSkip,
     this.error,
   });
-  final String section, title, hint, button;
+  final String section, title, hint, button, closeLabel;
   final int step, total;
   final Widget child;
   final VoidCallback? onBack, onClose, onContinue, onSkip;
@@ -39,7 +40,7 @@ class QuestionFlow extends StatelessWidget {
         title: Text(section, style: const TextStyle(fontSize: 16)),
         actions: [
           IconButton(
-            tooltip: 'Save and close',
+            tooltip: closeLabel,
             onPressed: busy ? null : onClose,
             icon: const Icon(Icons.close),
           ),

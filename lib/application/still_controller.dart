@@ -131,6 +131,28 @@ class StillController extends ChangeNotifier {
     return id;
   }
 
+  Future<void> updateVision({
+    required String id,
+    required String title,
+    required String why,
+    required String image,
+    required String area,
+    required Rhythm rhythm,
+    required Tone tone,
+    required String obstacle,
+  }) => transact((d) {
+    if (title.trim().isEmpty) throw ArgumentError('Give your vision a name.');
+    d.visions.firstWhere((v) => v.id == id)
+      ..title = title.trim()
+      ..why = why.trim()
+      ..imagePath = image
+      ..area = area.trim()
+      ..rhythm = rhythm
+      ..tone = tone
+      ..obstacle = obstacle
+      ..updatedAt = clock();
+  });
+
   Future<void> setMove(
     String visionId,
     String text, {

@@ -7,9 +7,15 @@ import 'editors.dart';
 import 'question_flow.dart';
 
 class VisionWizard extends StatefulWidget {
-  const VisionWizard({super.key, required this.controller, this.first = false});
+  const VisionWizard({
+    super.key,
+    required this.controller,
+    this.first = false,
+    this.visionId,
+  });
   final StillController controller;
   final bool first;
+  final String? visionId;
   @override
   State<VisionWizard> createState() => _VisionWizardState();
 }
@@ -24,9 +30,23 @@ class _VisionWizardState extends State<VisionWizard> {
   Tone tone = Tone.grounded;
   bool saving = false, editing = false, leaving = false;
   String? error;
+  bool get isUpdate => widget.visionId != null;
   @override
   void initState() {
     super.initState();
+    if (isUpdate) {
+      final v = widget.controller.vision(widget.visionId!);
+      area = areas.contains(v.area) ? v.area : 'Something Else';
+      customArea.text = areas.contains(v.area) ? '' : v.area;
+      title.text = v.title;
+      why.text = v.why;
+      image = v.imagePath;
+      obstacle = v.obstacle;
+      rhythm = v.rhythm;
+      tone = v.tone;
+      step = 7;
+      return;
+    }
     final p = widget.controller.data.preferences,
         d = widget.controller.data.preferences.visionDraft;
     area =
@@ -69,6 +89,13 @@ class _VisionWizardState extends State<VisionWizard> {
   };
   Future<void> checkpoint(int next) async {
     FocusScope.of(context).unfocus();
+    if (isUpdate) {
+      setState(() {
+        step = next;
+        error = null;
+      });
+      return;
+    }
     setState(() {
       saving = true;
       error = null;
@@ -105,6 +132,8 @@ class _VisionWizardState extends State<VisionWizard> {
     if (editing) {
       editing = false;
       checkpoint(7);
+    } else if (isUpdate) {
+      close();
     } else if (step > 0) {
       checkpoint(step - 1);
     } else {
@@ -144,6 +173,25 @@ class _VisionWizardState extends State<VisionWizard> {
       error = null;
     });
     try {
+      if (isUpdate) {
+        await widget.controller.updateVision(
+          id: widget.visionId!,
+          title: title.text,
+          why: why.text,
+          image: image,
+          area: area == 'Something Else' && customArea.text.trim().isNotEmpty
+              ? customArea.text.trim()
+              : area,
+          rhythm: rhythm,
+          tone: tone,
+          obstacle: obstacle,
+        );
+        if (!mounted) return;
+        setState(() => leaving = true);
+        await WidgetsBinding.instance.endOfFrame;
+        if (mounted) Navigator.pop(context, widget.visionId);
+        return;
+      }
       String? replace;
       bool later = false;
       if (widget.controller.active.length >= 3) {
@@ -207,7 +255,9 @@ class _VisionWizardState extends State<VisionWizard> {
       'Choose an image or keep this one. You can use your own photo.',
       'A rhythm for attention, not a deadline or a notification schedule.',
       'Preview the actual Today wording. You can change this in Settings.',
-      'Review before saving. You will choose one small move next, or leave room for it later.',
+      isUpdate
+          ? 'Choose Change beside any answer. Changes apply only when you tap Save changes. Closing keeps your saved vision.'
+          : 'Review before saving. You will choose one small move next, or leave room for it later.',
     ];
     final child = switch (step) {
       0 => Column(
@@ -403,7 +453,8 @@ class _VisionWizardState extends State<VisionWizard> {
         if (!didPop) back();
       },
       child: QuestionFlow(
-        section: 'Your vision',
+        section: isUpdate ? 'Edit your vision' : 'Your vision',
+        closeLabel: isUpdate ? 'Cancel changes' : 'Save and close',
         step: step,
         total: 8,
         title: titles[step],
@@ -415,7 +466,7 @@ class _VisionWizardState extends State<VisionWizard> {
         onClose: close,
         onContinue: step == 7 ? finish : advance,
         button: step == 7
-            ? 'Keep this close'
+            ? (isUpdate ? 'Save changes' : 'Keep this close')
             : editing
             ? 'Back to review'
             : step == 6

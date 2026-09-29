@@ -4,6 +4,7 @@ import '../application/still_controller.dart';
 import '../domain/models.dart';
 import 'design.dart';
 import 'editors.dart';
+import 'onboarding.dart';
 
 Future<void> showProof(
   BuildContext context,
@@ -39,6 +40,17 @@ class VisionDetail extends StatelessWidget {
   const VisionDetail({super.key, required this.controller, required this.id});
   final StillController controller;
   final String id;
+  Future<void> edit(BuildContext context) async {
+    final saved = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VisionWizard(controller: controller, visionId: id),
+      ),
+    );
+    if (saved != null && context.mounted)
+      toast(context, 'Your changes are saved.');
+  }
+
   Future<void> more(BuildContext context, Vision v) async {
     final choice = await sheet<String>(
       context,
@@ -47,6 +59,12 @@ class VisionDetail extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Edit vision'),
+              subtitle: const Text('Your answers, photo, rhythm, and tone'),
+              onTap: () => Navigator.pop(context, 'edit'),
+            ),
             if (v.status != VisionStatus.completed)
               ListTile(
                 leading: const Icon(Icons.auto_awesome_outlined),
@@ -85,6 +103,10 @@ class VisionDetail extends StatelessWidget {
     );
     if (choice == null || !context.mounted) return;
     try {
+      if (choice == 'edit') {
+        await edit(context);
+        return;
+      }
       if (choice == 'complete') {
         await showProof(context, controller, id, complete: true);
         return;
@@ -160,6 +182,11 @@ class VisionDetail extends StatelessWidget {
         appBar: AppBar(
           title: const Eyebrow('A little closer'),
           actions: [
+            IconButton(
+              onPressed: () => edit(context),
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit vision',
+            ),
             IconButton(
               onPressed: () => more(context, v),
               icon: const Icon(Icons.more_horiz),
