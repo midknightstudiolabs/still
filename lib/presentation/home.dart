@@ -180,7 +180,6 @@ class TodayScreen extends StatefulWidget {
 class _TodayScreenState extends State<TodayScreen> {
   int page = 0;
   final pager = PageController();
-  final Set<String> resting = {};
   @override
   void dispose() {
     pager.dispose();
@@ -247,6 +246,15 @@ class _TodayScreenState extends State<TodayScreen> {
             ],
           ),
         ),
+        if (c.data.preferences.visionDraft.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
+            child: OutlinedButton.icon(
+              onPressed: () => newVision(context, c),
+              icon: const Icon(Icons.edit_note),
+              label: const Text('Continue your saved vision'),
+            ),
+          ),
         if (active.isEmpty)
           EmptyMoment(
             title: 'A little space for possibility.',
@@ -436,6 +444,25 @@ class _TodayScreenState extends State<TodayScreen> {
                   ),
                 ],
               ),
+              if (!c.data.preferences.profile.saved && !c.data.preferences.demo)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.tune),
+                    title: const Text('Make this more personal'),
+                    subtitle: const Text(
+                      'Four optional questions, one at a time.',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => ProfileScreen(controller: c),
+                      ),
+                    ),
+                  ),
+                ),
               if (c.reviewDue) ...[
                 const SizedBox(height: 10),
                 InkWell(
@@ -493,7 +520,7 @@ class _TodayScreenState extends State<TodayScreen> {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       child: Column(
-        key: ValueKey('${v.id}-${resting.contains(v.id)}'),
+        key: ValueKey('${v.id}-${c.isResting(v.id)}'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Paper(
@@ -505,8 +532,8 @@ class _TodayScreenState extends State<TodayScreen> {
                     const Eyebrow('Your next small move'),
                     const Spacer(),
                     SizedBox(
-                      width: 28,
-                      height: 26,
+                      width: 48,
+                      height: 48,
                       child: IconButton(
                         padding: EdgeInsets.zero,
                         onPressed: () => sheet(
@@ -525,7 +552,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  resting.contains(v.id)
+                  c.isResting(v.id)
                       ? 'It can wait. This is still yours.'
                       : move?.text ??
                             'What would make this a little more real?',
@@ -533,7 +560,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 ),
                 if (move != null &&
                     move.cue.isNotEmpty &&
-                    !resting.contains(v.id)) ...[
+                    !c.isResting(v.id)) ...[
                   const SizedBox(height: 10),
                   Text(
                     'When or if: ${move.cue}',
@@ -550,7 +577,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: () async {
-                          if (move == null || resting.contains(v.id)) {
+                          if (move == null || c.isResting(v.id)) {
                             await showProof(context, c, v.id);
                             return;
                           }
@@ -602,13 +629,33 @@ class _TodayScreenState extends State<TodayScreen> {
                     ),
                     const SizedBox(width: 10),
                     TextButton(
-                      onPressed: () {
-                        setState(() => resting.add(v.id));
-                        toast(context, 'Come back when you’re ready.');
+                      onPressed: () async {
+                        try {
+                          final undo = c.isResting(v.id);
+                          await c.restToday(v.id, undo: undo);
+                          if (mounted) {
+                            setState(() {});
+                            if (context.mounted) {
+                              toast(
+                                context,
+                                undo
+                                    ? 'Your move is ready when you are.'
+                                    : 'Resting for today. Your move stays saved.',
+                              );
+                            }
+                          }
+                        } catch (_) {
+                          if (mounted && context.mounted) {
+                            toast(
+                              context,
+                              'Could not save that change. Please try again.',
+                            );
+                          }
+                        }
                       },
-                      child: const Text(
-                        'Not today',
-                        style: TextStyle(fontSize: 11, color: muted),
+                      child: Text(
+                        c.isResting(v.id) ? 'Undo rest' : 'Not today',
+                        style: const TextStyle(fontSize: 13),
                       ),
                     ),
                   ],
@@ -616,6 +663,61 @@ class _TodayScreenState extends State<TodayScreen> {
               ],
             ),
           ),
+          if (v.obstacle.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+              title: const Text(
+                'Your direction',
+                style: TextStyle(fontSize: 15),
+              ),
+              subtitle: Text(
+                barriers[v.obstacle] ?? 'A plan that fits your life',
+                style: const TextStyle(fontSize: 13),
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    barrierHelp(v.obstacle),
+                    style: const TextStyle(height: 1.6),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (c.proofs(v.id).isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Paper(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Eyebrow('Your latest moment'),
+                  const SizedBox(height: 10),
+                  Text(
+                    c.proofs(v.id).first.note.isEmpty
+                        ? 'A photo you kept.'
+                        : c.proofs(v.id).first.note,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 15, height: 1.6),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    shortDate(c.proofs(v.id).first.createdAt),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => openVision(context, c, v.id),
+                    child: const Text('See your story'),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             alignment: WrapAlignment.spaceBetween,
@@ -956,7 +1058,7 @@ class SettingsScreen extends StatelessWidget {
       ),
       const SizedBox(height: 14),
       const Text(
-        'Version 1.1 · Your space stays on this device.\nOptional personal guidance. No account. No streaks.',
+        'Version 1.2 · Your space stays on this device.\nOptional personal guidance. No account. No streaks.',
         style: TextStyle(color: muted, fontSize: 11, height: 1.9),
       ),
       const Divider(),

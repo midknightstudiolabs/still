@@ -8,6 +8,7 @@ import 'package:still/presentation/home.dart';
 import 'package:still/presentation/editors.dart';
 import 'package:still/domain/models.dart';
 import 'package:still/domain/guidance.dart';
+import 'package:still/presentation/question_flow.dart';
 
 import 'journeys_test.dart' show MemoryRepository;
 
@@ -32,8 +33,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('What matters to you?'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Skip for now'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Take my parents to Japan');
@@ -49,6 +48,8 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Review my vision'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Keep this close'));
     await tester.pumpAndSettle();
@@ -114,9 +115,13 @@ void main() {
 
       await choose('Student');
       await choose('Working professional');
+      await choose('Continue');
       await choose('Learning / Study');
+      await choose('Continue');
       await choose('It feels too big');
+      await choose('Continue');
       await choose('About 5 minutes');
+      await choose('Continue');
       await choose('Continue to my vision');
       expect(c.data.preferences.profile.roles, [
         'Student',
@@ -126,8 +131,8 @@ void main() {
       expect(c.data.preferences.profile.capacity, 'small');
       expect(
         tester
-            .widget<ChoiceChip>(
-              find.widgetWithText(ChoiceChip, 'Learning / Study'),
+            .widget<AnswerCard>(
+              find.widgetWithText(AnswerCard, 'Learning / Study'),
             )
             .selected,
         isTrue,
@@ -135,7 +140,7 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
       expect(
-        find.text(visionExample(c.data.preferences.profile)),
+        find.textContaining(visionExample(c.data.preferences.profile)),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);

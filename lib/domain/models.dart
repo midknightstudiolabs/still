@@ -165,6 +165,8 @@ class CheckIn {
 }
 
 class UserPreferences {
+  Map<String, dynamic> visionDraft = {}, profileDraft = {};
+  Map<String, String> restDays = {};
   UserProfile profile = UserProfile();
   Tone tone = Tone.grounded;
   String theme = 'system';
@@ -179,6 +181,9 @@ class UserPreferences {
     'notificationsEnabled': notificationsEnabled,
     'demo': demo,
     'profile': profile.toJson(),
+    'visionDraft': visionDraft,
+    'profileDraft': profileDraft,
+    'restDays': restDays,
   };
   factory UserPreferences.fromJson(Map<String, dynamic> j) => UserPreferences()
     ..tone = Tone.values.byName(j['tone'])
@@ -188,7 +193,10 @@ class UserPreferences {
     ..onboardingComplete = j['onboardingComplete']
     ..notificationsEnabled = j['notificationsEnabled'] ?? false
     ..demo = j['demo'] ?? false
-    ..profile = UserProfile.fromJson(j['profile'] ?? <String, dynamic>{});
+    ..profile = UserProfile.fromJson(j['profile'] ?? <String, dynamic>{})
+    ..visionDraft = Map<String, dynamic>.from(j['visionDraft'] ?? {})
+    ..profileDraft = Map<String, dynamic>.from(j['profileDraft'] ?? {})
+    ..restDays = Map<String, String>.from(j['restDays'] ?? {});
   UserPreferences();
 }
 

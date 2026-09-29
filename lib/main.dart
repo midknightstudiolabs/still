@@ -6,6 +6,7 @@ import 'data/repository.dart';
 import 'presentation/design.dart';
 import 'presentation/home.dart';
 import 'presentation/profile.dart';
+import 'presentation/onboarding.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -142,13 +143,31 @@ class _WelcomeState extends State<Welcome> {
                     : () => Navigator.push(
                         context,
                         MaterialPageRoute(
+                          builder: (_) => VisionWizard(
+                            controller: widget.controller,
+                            first: true,
+                          ),
+                        ),
+                      ),
+                child: Text(
+                  widget.controller.data.preferences.visionDraft.isEmpty
+                      ? 'What matters to you?'
+                      : 'Continue my vision',
+                ),
+              ),
+              TextButton(
+                onPressed: loading
+                    ? null
+                    : () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
                           builder: (_) => ProfileScreen(
                             controller: widget.controller,
                             first: true,
                           ),
                         ),
                       ),
-                child: const Text('What matters to you?'),
+                child: const Text('Personalize first · Optional'),
               ),
               const SizedBox(height: 10),
               TextButton(

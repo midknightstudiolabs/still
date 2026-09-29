@@ -4,6 +4,7 @@ import '../domain/models.dart';
 import '../domain/guidance.dart';
 import 'design.dart';
 import 'onboarding.dart';
+import 'question_flow.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -18,179 +19,251 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late final roles = {...widget.controller.data.preferences.profile.roles};
-  late String priority = widget.controller.data.preferences.profile.priority;
-  late String barrier = widget.controller.data.preferences.profile.barrier;
-  late String capacity = widget.controller.data.preferences.profile.capacity;
-  bool saving = false;
-
-  void next() {
-    if (widget.first) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              VisionWizard(controller: widget.controller, first: true),
-        ),
-      );
-    } else {
-      Navigator.pop(context);
-    }
+  final Set<String> roles = {};
+  String priority = '', barrier = '', capacity = '';
+  int step = 0;
+  bool saving = false, editing = false, leaving = false;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.controller.data.preferences;
+    final draft = p.profileDraft;
+    final v = draft.isEmpty ? p.profile : UserProfile.fromJson(draft);
+    roles.addAll(v.roles);
+    priority = v.priority;
+    barrier = v.barrier;
+    capacity = v.capacity;
+    step = (draft['step'] as int? ?? 0).clamp(0, 4);
   }
 
-  Future<void> save({bool clear = false}) async {
-    if (saving) return;
-    setState(() => saving = true);
+  UserProfile get value => UserProfile(
+    roles: roles.toList(),
+    priority: priority,
+    barrier: barrier,
+    capacity: capacity,
+    saved: true,
+  );
+  Future<void> checkpoint(int next) async {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      saving = true;
+      error = null;
+    });
     try {
-      await widget.controller.saveProfile(
-        clear
-            ? UserProfile()
-            : UserProfile(
-                roles: roles.toList(),
-                priority: priority,
-                barrier: barrier,
-                capacity: capacity,
-                saved: true,
-              ),
-      );
-      if (mounted) next();
-    } catch (e) {
+      await widget.controller.saveDraft('profile', {
+        ...value.toJson(),
+        'step': next,
+      });
       if (mounted) {
-        toast(context, '$e');
-        setState(() => saving = false);
+        setState(() {
+          step = next;
+          saving = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          saving = false;
+          error =
+              'Your answers could not be saved. Please try again. They are still here.';
+        });
       }
     }
   }
 
-  Widget question(String title, String body) => Padding(
-    padding: const EdgeInsets.only(top: 28, bottom: 12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: editorial(28)),
-        const SizedBox(height: 9),
-        Text(body, style: const TextStyle(color: muted, height: 1.6)),
-      ],
-    ),
-  );
-  Widget choices(
-    Map<String, String> options,
-    String value,
-    ValueChanged<String> select,
-  ) => Wrap(
-    spacing: 8,
-    runSpacing: 8,
-    children: options.entries
+  Future<void> close() async {
+    await checkpoint(step);
+    if (!mounted || error != null) return;
+    setState(() => leaving = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted) Navigator.pop(context);
+  }
+
+  void back() {
+    if (saving) return;
+    if (editing) {
+      editing = false;
+      checkpoint(4);
+    } else if (step > 0) {
+      checkpoint(step - 1);
+    } else {
+      close();
+    }
+  }
+
+  Future<void> finish({bool clear = false}) async {
+    setState(() {
+      saving = true;
+      error = null;
+    });
+    try {
+      await widget.controller.saveProfile(clear ? UserProfile() : value);
+      if (!mounted) return;
+      setState(() => leaving = true);
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      if (widget.first) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                VisionWizard(controller: widget.controller, first: true),
+          ),
+        );
+      } else {
+        Navigator.pop(context);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          saving = false;
+          error = 'Your preferences could not be saved. Please try again.';
+        });
+      }
+    }
+  }
+
+  void edit(int index) {
+    setState(() {
+      editing = true;
+      step = index;
+    });
+  }
+
+  Widget options(
+    Map<String, String> values,
+    String current,
+    ValueChanged<String> onSelect,
+  ) => Column(
+    children: values.entries
         .map(
-          (e) => ChoiceChip(
-            label: Text(e.value),
-            selected: value == e.key,
-            onSelected: saving ? null : (_) => setState(() => select(e.key)),
+          (e) => AnswerCard(
+            label: e.value,
+            selected: e.key == current,
+            onTap: saving ? null : () => setState(() => onSelect(e.key)),
           ),
         )
         .toList(),
   );
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('A little about you')),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(26, 20, 26, 40),
-          children: [
-            const Eyebrow('Your life has its own shape'),
-            const SizedBox(height: 14),
-            Text('Let’s start with\nwhere you are.', style: editorial(40)),
-            const SizedBox(height: 16),
-            const Text(
-              'Every answer is optional. These choices tailor examples and planning prompts; they do not label or assess you. Saved only in this browser or device. You can change or clear them in Settings.',
-              style: TextStyle(height: 1.7, color: muted),
-            ),
-            if (widget.first)
-              TextButton(
-                onPressed: saving ? null : next,
-                child: const Text('Skip for now'),
-              ),
-            question(
-              'What is part of your life right now?',
-              'Choose any that fit. Your role does not decide your goals.',
-            ),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: lifeRoles
-                  .map(
-                    (r) => FilterChip(
-                      label: Text(r),
-                      selected: roles.contains(r),
-                      onSelected: saving
-                          ? null
-                          : (on) => setState(() {
-                              if (on) {
-                                roles.add(r);
-                              } else {
-                                roles.remove(r);
-                              }
-                            }),
-                    ),
-                  )
-                  .toList(),
-            ),
-            question(
-              'What would you like more room for?',
-              'This becomes the starting area for your next vision. Every area stays available.',
-            ),
-            choices(
-              {'': 'I will choose later', for (final a in areas) a: a},
-              priority,
-              (v) => priority = v,
-            ),
-            question(
-              'When something matters, what can get in the way?',
-              'Think about recent situations. Putting something off can have different reasons; you can choose a different obstacle for each vision.',
-            ),
-            choices(barriers, barrier, (v) => barrier = v),
-            if (barrier.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 14),
-                child: Text(
-                  barrierHelp(barrier),
-                  style: const TextStyle(height: 1.6),
+  Widget build(BuildContext context) {
+    final titles = [
+      'What is part of your life right now?',
+      'What would you like more room for?',
+      'What tends to get in the way?',
+      'What feels realistic for one small step?',
+      'Does this feel like you?',
+    ];
+    final hints = [
+      'Choose any that fit, or skip. Roles shape examples, never the goals you are allowed to choose.',
+      'This is a starting point for your next vision. You can always choose another area.',
+      'Think about recent situations, not a label for yourself. Each vision can have a different obstacle.',
+      'Choose a starting size, not a daily commitment. Some days will be different.',
+      'These optional answers tailor preset examples. No scoring, diagnosis, or AI. Stored only on this device.',
+    ];
+    return PopScope(
+      canPop: leaving,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) back();
+      },
+      child: QuestionFlow(
+        section: 'A little about you',
+        step: step,
+        total: 5,
+        title: titles[step],
+        hint: hints[step],
+        busy: saving,
+        error: error,
+        optional: step < 4,
+        onBack: back,
+        onClose: close,
+        button: step == 4
+            ? (widget.first ? 'Continue to my vision' : 'Save my preferences')
+            : editing
+            ? 'Back to review'
+            : 'Continue',
+        onContinue: step == 4
+            ? () => finish()
+            : () {
+                final next = editing ? 4 : step + 1;
+                editing = false;
+                checkpoint(next);
+              },
+        onSkip: step < 4
+            ? () {
+                final next = editing ? 4 : step + 1;
+                editing = false;
+                checkpoint(next);
+              }
+            : null,
+        child: switch (step) {
+          0 => Column(
+            children: [
+              for (final r in lifeRoles)
+                AnswerCard(
+                  label: r,
+                  selected: roles.contains(r),
+                  multiple: true,
+                  onTap: saving
+                      ? null
+                      : () => setState(() {
+                          if (!roles.add(r)) roles.remove(r);
+                        }),
                 ),
+              const SizedBox(height: 12),
+              const Text(
+                'Four optional questions, then a review. You can save and close at any point.',
+                style: TextStyle(height: 1.6),
               ),
-            question(
-              'What feels realistic for a small step?',
-              'A planning preference, not a daily commitment or a timer.',
-            ),
-            choices(capacities, capacity, (v) => capacity = v),
-            const SizedBox(height: 28),
-            FilledButton(
-              onPressed: saving ? null : () => save(),
-              child: Text(
-                saving
-                    ? 'Saving…'
-                    : widget.first
-                    ? 'Continue to my vision'
-                    : 'Save my preferences',
+            ],
+          ),
+          1 => options(
+            {'': 'I will choose later', for (final a in areas) a: a},
+            priority,
+            (v) => priority = v,
+          ),
+          2 => options(barriers, barrier, (v) => barrier = v),
+          3 => options(capacities, capacity, (v) => capacity = v),
+          _ => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ReviewAnswer(
+                'Life roles',
+                roles.isEmpty ? 'Not specified' : roles.join(', '),
+                () => edit(0),
               ),
-            ),
-            if (!widget.first)
-              TextButton(
-                onPressed: saving ? null : () => save(clear: true),
-                child: const Text('Clear these answers'),
+              ReviewAnswer(
+                'Starting area',
+                priority.isEmpty ? 'Choose later' : priority,
+                () => edit(1),
               ),
-            const SizedBox(height: 12),
-            const Text(
-              'Clearing these answers keeps your visions, their obstacles, and your saved moves. Guidance uses preset rules, not AI.',
-              style: TextStyle(fontSize: 12, color: muted, height: 1.6),
-            ),
-          ],
-        ),
+              ReviewAnswer(
+                'Possible obstacle',
+                barriers[barrier] ?? 'Not specified',
+                () => edit(2),
+              ),
+              ReviewAnswer(
+                'Time for a step',
+                capacities[capacity] ?? 'Not specified',
+                () => edit(3),
+              ),
+              Text(barrierHelp(barrier), style: const TextStyle(height: 1.6)),
+              if (!widget.first)
+                TextButton(
+                  onPressed: saving ? null : () => finish(clear: true),
+                  child: const Text('Clear these answers'),
+                ),
+              const Text(
+                'Clearing your profile keeps existing visions and their saved plans.',
+                style: TextStyle(fontSize: 13, height: 1.5),
+              ),
+            ],
+          ),
+        },
       ),
-    ),
-  );
+    );
+  }
 }
 
 class ResearchScreen extends StatelessWidget {

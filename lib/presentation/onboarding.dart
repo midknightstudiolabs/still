@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-
 import '../application/still_controller.dart';
 import '../domain/models.dart';
 import '../domain/guidance.dart';
 import 'design.dart';
 import 'editors.dart';
+import 'question_flow.dart';
 
 class VisionWizard extends StatefulWidget {
   const VisionWizard({super.key, required this.controller, this.first = false});
@@ -16,17 +16,38 @@ class VisionWizard extends StatefulWidget {
 
 class _VisionWizardState extends State<VisionWizard> {
   int step = 0;
-  late String area = widget.controller.data.preferences.profile.priority.isEmpty
-      ? 'Travel'
-      : widget.controller.data.preferences.profile.priority;
-  String image = photos.first;
-  late String obstacle = widget.controller.data.preferences.profile.barrier;
+  String area = 'Travel', image = photos.first, obstacle = '';
   final customArea = TextEditingController(),
       title = TextEditingController(),
       why = TextEditingController();
   Rhythm rhythm = Rhythm.weekly;
-  late Tone tone = widget.controller.data.preferences.tone;
-  bool saving = false;
+  Tone tone = Tone.grounded;
+  bool saving = false, editing = false, leaving = false;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.controller.data.preferences,
+        d = widget.controller.data.preferences.visionDraft;
+    area =
+        d['area'] as String? ??
+        (p.profile.priority.isEmpty ? 'Travel' : p.profile.priority);
+    image = d['image'] as String? ?? photos.first;
+    obstacle = d['obstacle'] as String? ?? p.profile.barrier;
+    title.text = d['title'] as String? ?? '';
+    why.text = d['why'] as String? ?? '';
+    customArea.text = d['customArea'] as String? ?? '';
+    rhythm = Rhythm.values.firstWhere(
+      (r) => r.name == d['rhythm'],
+      orElse: () => Rhythm.weekly,
+    );
+    tone = Tone.values.firstWhere(
+      (t) => t.name == d['tone'],
+      orElse: () => p.tone,
+    );
+    step = (d['step'] as int? ?? 0).clamp(0, 7);
+  }
+
   @override
   void dispose() {
     customArea.dispose();
@@ -35,9 +56,93 @@ class _VisionWizardState extends State<VisionWizard> {
     super.dispose();
   }
 
+  Map<String, dynamic> draft(int next) => {
+    'step': next,
+    'area': area,
+    'image': image,
+    'obstacle': obstacle,
+    'title': title.text,
+    'why': why.text,
+    'customArea': customArea.text,
+    'rhythm': rhythm.name,
+    'tone': tone.name,
+  };
+  Future<void> checkpoint(int next) async {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      saving = true;
+      error = null;
+    });
+    try {
+      await widget.controller.saveDraft('vision', draft(next));
+      if (mounted) {
+        setState(() {
+          step = next;
+          saving = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          saving = false;
+          error =
+              'We could not save your progress. Your answers are still here. Please try again.';
+        });
+      }
+    }
+  }
+
+  Future<void> close() async {
+    await checkpoint(step);
+    if (!mounted || error != null) return;
+    setState(() => leaving = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted) Navigator.pop(context);
+  }
+
+  void back() {
+    if (saving) return;
+    if (editing) {
+      editing = false;
+      checkpoint(7);
+    } else if (step > 0) {
+      checkpoint(step - 1);
+    } else {
+      close();
+    }
+  }
+
+  void advance() {
+    if (step == 1 && title.text.trim().isEmpty) {
+      setState(
+        () => error =
+            'Give your vision a name to continue. A few words are enough.',
+      );
+      return;
+    }
+    final next = editing ? 7 : step + 1;
+    editing = false;
+    checkpoint(next);
+  }
+
+  void edit(int index) {
+    setState(() {
+      step = index;
+      editing = true;
+      error = null;
+    });
+  }
+
   Future<void> finish() async {
     if (saving) return;
-    setState(() => saving = true);
+    if (title.text.trim().isEmpty) {
+      edit(1);
+      return;
+    }
+    setState(() {
+      saving = true;
+      error = null;
+    });
     try {
       String? replace;
       bool later = false;
@@ -68,378 +173,226 @@ class _VisionWizardState extends State<VisionWizard> {
         context,
         MoveEditor(controller: widget.controller, visionId: id),
       );
+      if (!mounted) return;
+      setState(() => leaving = true);
+      await WidgetsBinding.instance.endOfFrame;
       if (mounted) Navigator.pop(context, id);
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
-        toast(context, '$e');
-        setState(() => saving = false);
+        setState(() {
+          saving = false;
+          error = 'Your vision could not be saved. Please try again.';
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final headings = [
-      'What matters to\nyou right now?',
-      'What are you hoping\nbecomes real?',
-      'Why does\nthis matter?',
-      'What might get\nin the way?',
-      'Give it\na little life.',
-      'How often does this\nneed attention?',
-      'How should this\napp talk to you?',
+    final titles = [
+      'What matters to you right now?',
+      'What are you hoping becomes real?',
+      'Why does this matter to you?',
+      'What might get in the way?',
+      'What image brings it to life?',
+      'How often does this need attention?',
+      'How should Still speak to you?',
+      'A little direction, made yours.',
     ];
-    final subtitles = [
-      'You don’t need your whole life figured out. Start with what feels important.',
-      'Big or small. Specific or still taking shape. Make it yours.',
-      'What would be different in your life? Is this something you want for yourself? A few words are enough, and you can skip this.',
+    final hints = [
+      'Seven short questions, then review. Only a vision name is required. Personal questions are optional in Settings.',
+      'Big or small, write it in your own words. ${visionExample(widget.controller.data.preferences.profile)}',
+      'What would change for you if this happened? Leave this blank if you are still figuring it out.',
       'Choose what fits this vision today. This is a situation to plan around, not a label for you.',
-      'Choose a photo that brings you back to the feeling.',
-      'Choose a rhythm, not a deadline.',
-      'A little support, in your own language.',
+      'Choose an image or keep this one. You can use your own photo.',
+      'A rhythm for attention, not a deadline or a notification schedule.',
+      'Preview the actual Today wording. You can change this in Settings.',
+      'Review before saving. You will choose one small move next, or leave room for it later.',
     ];
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: saving
-              ? null
-              : () {
-                  if (step > 0) {
-                    setState(() => step--);
-                  } else {
-                    Navigator.pop(context);
-                  }
-                },
+    final child = switch (step) {
+      0 => Column(
+        children: [
+          for (final a in areas)
+            AnswerCard(
+              label: a,
+              selected: area == a,
+              onTap: saving ? null : () => setState(() => area = a),
+            ),
+          if (area == 'Something Else')
+            TextField(
+              controller: customArea,
+              maxLength: 60,
+              decoration: const InputDecoration(
+                labelText: 'Your area (optional)',
+              ),
+            ),
+        ],
+      ),
+      1 => TextField(
+        controller: title,
+        maxLength: 100,
+        minLines: 2,
+        maxLines: 4,
+        textCapitalization: TextCapitalization.sentences,
+        autofocus: true,
+        onChanged: (_) => setState(() => error = null),
+        decoration: const InputDecoration(
+          labelText: 'Your vision',
+          hintText: 'For example, take my parents to Japan',
         ),
-        title: Text('still', style: editorial(30)),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 24),
-            child: Center(child: Eyebrow('${step + 1} of 7')),
+      ),
+      2 => TextField(
+        controller: why,
+        maxLength: 240,
+        minLines: 3,
+        maxLines: 6,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(
+          labelText: 'Why it matters (optional)',
+          hintText: 'For example, share time together while we can',
+        ),
+      ),
+      3 => Column(
+        children: [
+          for (final b in barriers.entries)
+            AnswerCard(
+              label: b.value,
+              selected: obstacle == b.key,
+              description: obstacle == b.key && b.key.isNotEmpty
+                  ? barrierHelp(b.key)
+                  : null,
+              onTap: saving ? null : () => setState(() => obstacle = b.key),
+            ),
+        ],
+      ),
+      4 => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Photo(image, height: 220),
+          const SizedBox(height: 16),
+          for (var i = 0; i < photos.length; i++)
+            AnswerCard(
+              label: [
+                'A place to discover',
+                'Room to create',
+                'A calmer moment',
+              ][i],
+              selected: image == photos[i],
+              onTap: saving ? null : () => setState(() => image = photos[i]),
+            ),
+          OutlinedButton.icon(
+            onPressed: saving
+                ? null
+                : () async {
+                    try {
+                      final selected = await choosePhoto();
+                      if (selected != null && mounted) {
+                        setState(() => image = selected);
+                      }
+                    } catch (_) {
+                      if (mounted) {
+                        setState(
+                          () => error =
+                              'We could not use that photo. Try a smaller image under 2.5 MB.',
+                        );
+                      }
+                    }
+                  },
+            icon: const Icon(Icons.add_photo_alternate_outlined),
+            label: const Text('Choose your own photo'),
           ),
         ],
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 10,
-                ),
-                child: Row(
-                  children: List.generate(
-                    7,
-                    (i) => Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        height: 2,
-                        color: i <= step
-                            ? Theme.of(context).colorScheme.primary
-                            : muted.withValues(alpha: .2),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 240),
-                    child: Column(
-                      key: ValueKey(step),
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Eyebrow(
-                          widget.first
-                              ? 'A beginning, not a big plan'
-                              : 'A little space for something new',
-                        ),
-                        const SizedBox(height: 20),
-                        Text(headings[step], style: editorial(42)),
-                        const SizedBox(height: 18),
-                        Text(
-                          subtitles[step],
-                          style: const TextStyle(
-                            color: muted,
-                            height: 1.75,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-                        if (step == 0) ...[
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 10,
-                            children: areas
-                                .map(
-                                  (a) => ChoiceChip(
-                                    label: Text(a),
-                                    selected: area == a,
-                                    onSelected: (_) => setState(() => area = a),
-                                    showCheckmark: false,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 10,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    side: BorderSide(
-                                      color: muted.withValues(alpha: .2),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                          if (area == 'Something Else')
-                            Padding(
-                              padding: const EdgeInsets.only(top: 20),
-                              child: TextField(
-                                controller: customArea,
-                                maxLength: 60,
-                                decoration: const InputDecoration(
-                                  hintText: 'What feels important?',
-                                ),
-                              ),
-                            ),
-                        ],
-                        if (step == 1) ...[
-                          Text(
-                            visionExample(
-                              widget.controller.data.preferences.profile,
-                            ),
-                            style: const TextStyle(color: muted, height: 1.6),
-                          ),
-                          const SizedBox(height: 14),
-                          TextField(
-                            controller: title,
-                            maxLength: 100,
-                            minLines: 3,
-                            maxLines: 4,
-                            autofocus: true,
-                            style: editorial(29),
-                            onChanged: (_) => setState(() {}),
-                            decoration: const InputDecoration(
-                              hintText: 'A vision in your own words',
-                            ),
-                          ),
-                        ],
-                        if (step == 2)
-                          TextField(
-                            controller: why,
-                            onChanged: (_) => setState(() {}),
-                            maxLength: 240,
-                            minLines: 3,
-                            maxLines: 5,
-                            autofocus: true,
-                            decoration: const InputDecoration(
-                              hintText: 'I want to do this while we still can.',
-                            ),
-                          ),
-                        if (step == 3) ...[
-                          ...barriers.entries.map(
-                            (b) => option(
-                              b.value,
-                              b.key.isEmpty
-                                  ? 'Keep this open. You can change it when planning a move.'
-                                  : barrierHelp(b.key),
-                              obstacle == b.key,
-                              () => setState(() => obstacle = b.key),
-                            ),
-                          ),
-                        ],
-                        if (step == 4) ...[
-                          Photo(image, height: 250),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: photos
-                                .map(
-                                  (p) => Expanded(
-                                    child: GestureDetector(
-                                      onTap: () => setState(() => image = p),
-                                      child: Container(
-                                        margin: const EdgeInsets.only(right: 8),
-                                        padding: const EdgeInsets.all(3),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          border: Border.all(
-                                            color: image == p
-                                                ? pine
-                                                : Colors.transparent,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Photo(p, height: 68, radius: 9),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                          const SizedBox(height: 14),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                try {
-                                  final p = await choosePhoto();
-                                  if (p != null && mounted) {
-                                    setState(() => image = p);
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) toast(context, '$e');
-                                }
-                              },
-                              icon: const Icon(
-                                Icons.add_photo_alternate_outlined,
-                                size: 18,
-                              ),
-                              label: const Text('Choose your own photo'),
-                            ),
-                          ),
-                        ],
-                        if (step == 5)
-                          ...Rhythm.values.map(
-                            (r) => option(
-                              rhythmName(r),
-                              switch (r) {
-                                Rhythm.daily =>
-                                  'For something that benefits from frequent action.',
-                                Rhythm.weekly =>
-                                  'For bigger hopes. One meaningful step is enough.',
-                                Rhythm.occasional =>
-                                  'Stay connected, without constant action.',
-                              },
-                              rhythm == r,
-                              () => setState(() => rhythm = r),
-                              badge: r == Rhythm.weekly ? 'RECOMMENDED' : null,
-                            ),
-                          ),
-                        if (step == 6)
-                          ...Tone.values.map(
-                            (t) => option(
-                              toneName(t),
-                              '${toneDescription(t)}\n\nToday preview: “${toneExample(t)}”',
-                              tone == t,
-                              () => setState(() => tone = t),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 10, 28, 24),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed:
-                          saving || (step == 1 && title.text.trim().isEmpty)
-                          ? null
-                          : () {
-                              if (step == 6) {
-                                finish();
-                              } else {
-                                FocusScope.of(context).unfocus();
-                                setState(() => step++);
-                              }
-                            },
-                      child: Text(
-                        saving
-                            ? 'Making room…'
-                            : step == 6
-                            ? 'Keep this close'
-                            : step == 2 && why.text.isEmpty
-                            ? 'Continue · optional'
-                            : 'Continue',
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+      5 => Column(
+        children: [
+          for (final r in Rhythm.values)
+            AnswerCard(
+              label: rhythmName(r),
+              selected: rhythm == r,
+              description: switch (r) {
+                Rhythm.daily => 'Frequent attention when that helps.',
+                Rhythm.weekly => 'One meaningful step at a time. The default.',
+                Rhythm.occasional => 'Stay connected without constant action.',
+              },
+              onTap: saving ? null : () => setState(() => rhythm = r),
+            ),
+        ],
+      ),
+      6 => Column(
+        children: [
+          for (final t in Tone.values)
+            AnswerCard(
+              label: toneName(t),
+              selected: tone == t,
+              description:
+                  '${toneDescription(t)}\n\nToday preview: “${toneExample(t)}”',
+              onTap: saving ? null : () => setState(() => tone = t),
+            ),
+        ],
+      ),
+      _ => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Photo(image, height: 180),
+          const SizedBox(height: 14),
+          ReviewAnswer('Vision', title.text, () => edit(1)),
+          ReviewAnswer(
+            'Life area',
+            area == 'Something Else' && customArea.text.isNotEmpty
+                ? customArea.text
+                : area,
+            () => edit(0),
           ),
-        ),
+          ReviewAnswer(
+            'What matters',
+            why.text.isEmpty ? 'Room to discover this later' : why.text,
+            () => edit(2),
+          ),
+          ReviewAnswer(
+            'Possible obstacle',
+            barriers[obstacle] ?? 'Not specified',
+            () => edit(3),
+          ),
+          ReviewAnswer(
+            'Image',
+            photos.contains(image)
+                ? 'Selected inspiration photo'
+                : 'Your own photo',
+            () => edit(4),
+          ),
+          ReviewAnswer('Rhythm', rhythmName(rhythm), () => edit(5)),
+          ReviewAnswer('Tone', toneName(tone), () => edit(6)),
+          Text(barrierHelp(obstacle), style: const TextStyle(height: 1.6)),
+        ],
+      ),
+    };
+    return PopScope(
+      canPop: leaving,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) back();
+      },
+      child: QuestionFlow(
+        section: 'Your vision',
+        step: step,
+        total: 8,
+        title: titles[step],
+        hint: hints[step],
+        busy: saving,
+        error: error,
+        optional: step != 1 && step < 7,
+        onBack: back,
+        onClose: close,
+        onContinue: step == 7 ? finish : advance,
+        button: step == 7
+            ? 'Keep this close'
+            : editing
+            ? 'Back to review'
+            : step == 6
+            ? 'Review my vision'
+            : 'Continue',
+        onSkip: step != 1 && step < 7 ? advance : null,
+        child: child,
       ),
     );
   }
-
-  Widget option(
-    String title,
-    String body,
-    bool selected,
-    VoidCallback onTap, {
-    String? badge,
-  }) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(19),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          color: selected
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: .07)
-              : Colors.transparent,
-          border: Border.all(
-            color: selected
-                ? Theme.of(context).colorScheme.primary
-                : muted.withValues(alpha: .22),
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  if (badge != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        badge,
-                        style: const TextStyle(
-                          fontSize: 8,
-                          letterSpacing: 1.2,
-                          color: muted,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 7),
-                  Text(
-                    body,
-                    style: const TextStyle(
-                      color: muted,
-                      fontSize: 12,
-                      height: 1.7,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(
-              selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              size: 19,
-              color: selected ? Theme.of(context).colorScheme.primary : muted,
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }

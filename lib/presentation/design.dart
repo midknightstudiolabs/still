@@ -218,10 +218,10 @@ class Eyebrow extends StatelessWidget {
   Widget build(BuildContext context) => Text(
     text.toUpperCase(),
     style: TextStyle(
-      fontSize: 10,
+      fontSize: 12,
       fontWeight: FontWeight.w700,
       letterSpacing: 2,
-      color: color ?? muted,
+      color: color ?? Theme.of(context).colorScheme.onSurfaceVariant,
     ),
   );
 }

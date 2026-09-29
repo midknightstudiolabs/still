@@ -32,6 +32,13 @@ jobs:
         run: flutter analyze
       - name: Test journeys
         run: flutter test
+      - name: Save mobile UI previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: still-mobile-previews
+          path: build/ux-previews
+          if-no-files-found: ignore
       - name: Configure Pages
         id: pages
         if: github.event_name != 'pull_request'

@@ -124,6 +124,7 @@ class StillController extends ChangeNotifier {
         ),
       );
       d.preferences
+        ..visionDraft = {}
         ..onboardingComplete = true
         ..tone = tone;
     });
@@ -277,6 +278,28 @@ class StillController extends ChangeNotifier {
   });
   Future<void> saveProfile(UserProfile profile) => transact((d) {
     d.preferences.profile = UserProfile.fromJson(profile.toJson());
+    d.preferences.profileDraft = {};
+  });
+  Future<void> saveDraft(String kind, Map<String, dynamic> draft) =>
+      transact((d) {
+        final copy = Map<String, dynamic>.from(draft);
+        if (kind == 'vision') {
+          d.preferences.visionDraft = copy;
+        } else if (kind == 'profile') {
+          d.preferences.profileDraft = copy;
+        } else {
+          throw ArgumentError('Unknown draft');
+        }
+      });
+  String get todayKey => '${clock().year}-${clock().month}-${clock().day}';
+  bool isResting(String id) => data.preferences.restDays[id] == todayKey;
+  Future<void> restToday(String id, {bool undo = false}) => transact((d) {
+    d.preferences.restDays.removeWhere((_, day) => day != todayKey);
+    if (undo) {
+      d.preferences.restDays.remove(id);
+    } else {
+      d.preferences.restDays[id] = todayKey;
+    }
   });
   Future<void> simulateReturn() async {
     await transact(
