@@ -94,7 +94,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('100% · 1 of 1 complete'), findsOneWidget);
     expect(c.vision(id).milestones, isEmpty);
-    await tester.ensureVisible(find.text('Clear date'));
+    await tester.scrollUntilVisible(find.text('Clear date'), 180);
     await tester.tap(find.text('Clear date'));
     await tester.tap(find.text('Save progress'));
     await tester.pumpAndSettle();
