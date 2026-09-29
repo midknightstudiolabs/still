@@ -26,11 +26,19 @@ A Flutter mobile MVP that keeps what matters from disappearing when life gets bu
 - Tone preferences, theme, an honest notification placeholder, reset confirmation, and return-flow preview.
 - Versioned local persistence, test suite, and a read-only widget projection for a future native widget implementation.
 
+## Progress and dates
+
+Open a vision and choose **Milestones & date**, or use the progress card on Today. Add up to 20 meaningful milestones and an optional target date. Each milestone has equal weight: two completed out of five is 40%. Tick milestones when they happen; each records its completion date. Save progress to apply changes. Closing cancels unsaved edits.
+
+The progress card shows the start date, optional target date, and latest milestone or proof date. Editing the target date does not reset progress. Adding or removing milestones recalculates the percentage. No milestones means no percentage yet, rather than a guessed value. Next Moves and proof are kept separately and do not automatically complete milestones. Finishing all milestones does not automatically move the vision to Memories; the user still chooses **It Happened**.
+
+Saved visions can also be edited from the pencil button. Change any answer individually and choose **Save changes**; existing moves and proof remain attached.
+
 ## Validation status
 
 **Live app: https://midknightstudiolabs.github.io/still/**
 
-**Version 1.2.1 verified on GitHub Actions (Ubuntu): static analysis, all 30 automated tests, the release web build, and Pages deployment passed.** The live version endpoint reports 1.2.1 build 4. Nine mobile widget previews were generated and visually reviewed, including dark mode and a 320-pixel screen at 160% text scaling. [Successful deployment](https://github.com/midknightstudiolabs/still/actions/runs/36560225272).
+**Version 1.3.0 verified on GitHub Actions (Ubuntu): static analysis, all 35 automated tests, the release web build, and Pages deployment passed.** The live version endpoint reports 1.3.0 build 6. Eleven mobile widget previews were generated and visually reviewed, including dark mode and a 320-pixel screen at 160% text scaling. [Successful deployment](https://github.com/midknightstudiolabs/still/actions/runs/36562376246).
 
 Flutter 3.47.5 / Dart 3.13.4 were used. Windows application control originally prevented local runtime testing; the Linux cloud runner subsequently executed the tests and web build successfully. Narrow-layout and test-interaction issues discovered in the first run were corrected before deployment. Native APK/iOS builds and real-device photo picking remain unverified.
 
