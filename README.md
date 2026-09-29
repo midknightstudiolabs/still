@@ -9,7 +9,7 @@ A Flutter mobile MVP that keeps what matters from disappearing when life gets bu
 - iOS and Android project runners, with a web runner for convenient development.
 - Warm ivory and forest-green design, bundled editorial photography, Manrope and Cormorant typography, light/dark/system themes, and quiet transitions.
 - Welcome screen with explicit demo entry; an optional personal profile; seven vision-creation steps; photo-library selection and offline suggested images.
-- One focused question at a time, numeric progress, large selectable answer cards, Back, optional skips, local draft checkpoints, Save and close, and an editable review before committing. Personal profiling is no longer required before creating a vision.
+- One focused question at a time, numeric progress, cozy rounded answer choices, Back, optional skips, local draft checkpoints, Save and close, and an editable review before committing. Personal profiling is no longer required before creating a vision.
 - Today shows the latest real Proof and the chosen obstacle's guidance. Not today now lasts for the local calendar day across reopening, with Undo rest.
 - Optional multiple life roles, a user-selected priority, situational obstacles, and realistic time preferences. Settings supports editing and clearing these answers without deleting the board.
 - Editable, rule-based Next Move examples, per-vision obstacles, and optional when/if action cues. No AI or personality assessment.
@@ -30,7 +30,7 @@ A Flutter mobile MVP that keeps what matters from disappearing when life gets bu
 
 **Live app: https://midknightstudiolabs.github.io/still/**
 
-**Version 1.2 verified on GitHub Actions (Ubuntu): static analysis, all 30 automated tests, the release web build, and Pages deployment passed.** The live version endpoint reports 1.2.0 build 3. Nine mobile widget previews were generated and visually reviewed, including dark mode and a 320-pixel screen at 160% text scaling. [Successful deployment](https://github.com/midknightstudiolabs/still/actions/runs/36556805608).
+**Version 1.2.1 verified on GitHub Actions (Ubuntu): static analysis, all 30 automated tests, the release web build, and Pages deployment passed.** The live version endpoint reports 1.2.1 build 4. Nine mobile widget previews were generated and visually reviewed, including dark mode and a 320-pixel screen at 160% text scaling. [Successful deployment](https://github.com/midknightstudiolabs/still/actions/runs/36560225272).
 
 Flutter 3.47.5 / Dart 3.13.4 were used. Windows application control originally prevented local runtime testing; the Linux cloud runner subsequently executed the tests and web build successfully. Narrow-layout and test-interaction issues discovered in the first run were corrected before deployment. Native APK/iOS builds and real-device photo picking remain unverified.
 
