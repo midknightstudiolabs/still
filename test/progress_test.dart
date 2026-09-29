@@ -87,6 +87,7 @@ void main() {
     await tester.tap(find.text('Add milestone'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Book flights');
+    await tester.pump();
     await tester.tap(find.text('Keep milestone'));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(Checkbox));

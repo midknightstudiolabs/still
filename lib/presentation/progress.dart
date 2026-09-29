@@ -259,21 +259,26 @@ class _ProgressEditorState extends State<ProgressEditor> {
                       padding: const EdgeInsets.all(10),
                       child: Column(
                         children: [
-                          CheckboxListTile(
-                            contentPadding: EdgeInsets.zero,
-                            controlAffinity: ListTileControlAffinity.leading,
-                            value: m.done,
-                            onChanged: saving
-                                ? null
-                                : (done) => setState(() {
-                                    m.completedAt = done == true
-                                        ? widget.controller.clock()
-                                        : null;
-                                  }),
-                            title: Text(m.title),
-                            subtitle: m.done
-                                ? Text('Completed ${shortDate(m.completedAt!)}')
-                                : null,
+                          Material(
+                            color: Colors.transparent,
+                            child: CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              controlAffinity: ListTileControlAffinity.leading,
+                              value: m.done,
+                              onChanged: saving
+                                  ? null
+                                  : (done) => setState(() {
+                                      m.completedAt = done == true
+                                          ? widget.controller.clock()
+                                          : null;
+                                    }),
+                              title: Text(m.title),
+                              subtitle: m.done
+                                  ? Text(
+                                      'Completed ${shortDate(m.completedAt!)}',
+                                    )
+                                  : null,
+                            ),
                           ),
                           Wrap(
                             spacing: 10,
