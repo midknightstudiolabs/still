@@ -31,7 +31,6 @@ Future<void> markMove(
     await c.completeMove(id);
     if (!context.mounted) return;
     toast(context, 'A little more real. Kept as proof.');
-    await sheet(context, MoveEditor(controller: c, visionId: id));
   } catch (e) {
     if (context.mounted) toast(context, '$e');
   }

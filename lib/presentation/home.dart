@@ -5,8 +5,8 @@ import '../domain/models.dart';
 import '../domain/guidance.dart';
 import 'design.dart';
 import 'detail.dart';
-import 'editors.dart';
 import 'progress.dart';
+import 'today_action.dart';
 import 'onboarding.dart';
 import 'review.dart';
 import 'profile.dart';
@@ -266,6 +266,19 @@ class _TodayScreenState extends State<TodayScreen> {
             ),
           )
         else ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+            child: TodayAction(
+              key: ValueKey(active[page.clamp(0, active.length - 1)].id),
+              controller: c,
+              id: active[page.clamp(0, active.length - 1)].id,
+              onOpen: () => openVision(
+                context,
+                c,
+                active[page.clamp(0, active.length - 1)].id,
+              ),
+            ),
+          ),
           SizedBox(
             height: 358,
             child: PageView.builder(
@@ -517,7 +530,7 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Widget focus(Vision v) {
-    final c = widget.controller, move = widget.controller.move(v);
+    final c = widget.controller;
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       child: Column(
@@ -526,145 +539,6 @@ class _TodayScreenState extends State<TodayScreen> {
         children: [
           VisionProgress(controller: c, vision: v),
           const SizedBox(height: 18),
-          Paper(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(child: Eyebrow('Your next small move')),
-                    SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: () => sheet(
-                          context,
-                          MoveEditor(controller: c, visionId: v.id),
-                        ),
-                        icon: const Icon(
-                          Icons.edit_outlined,
-                          size: 15,
-                          color: muted,
-                        ),
-                        tooltip: 'Update Next Move',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  c.isResting(v.id)
-                      ? 'It can wait. This is still yours.'
-                      : move?.text ??
-                            'What would make this a little more real?',
-                  style: const TextStyle(fontSize: 16, height: 1.55),
-                ),
-                if (move != null &&
-                    move.cue.isNotEmpty &&
-                    !c.isResting(v.id)) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    'When or if: ${move.cue}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: muted,
-                      height: 1.6,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () async {
-                          if (move == null || c.isResting(v.id)) {
-                            await showProof(context, c, v.id);
-                            return;
-                          }
-                          final action = await sheet<String>(
-                            context,
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 26),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text('What happened?', style: editorial(32)),
-                                  const SizedBox(height: 20),
-                                  ListTile(
-                                    leading: const Icon(
-                                      Icons.check_circle_outline,
-                                    ),
-                                    title: const Text('I made my Next Move'),
-                                    subtitle: Text(move.text),
-                                    onTap: () => Navigator.pop(context, 'move'),
-                                  ),
-                                  ListTile(
-                                    leading: const Icon(
-                                      Icons.add_photo_alternate_outlined,
-                                    ),
-                                    title: const Text(
-                                      'Something else that counts',
-                                    ),
-                                    subtitle: const Text(
-                                      'Keep a note or photo',
-                                    ),
-                                    onTap: () =>
-                                        Navigator.pop(context, 'proof'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                          if (!mounted) return;
-                          if (action == 'move') {
-                            await markMove(context, c, v.id);
-                          }
-                          if (action == 'proof' && mounted) {
-                            await showProof(context, c, v.id);
-                          }
-                        },
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('I did something'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    TextButton(
-                      onPressed: () async {
-                        try {
-                          final undo = c.isResting(v.id);
-                          await c.restToday(v.id, undo: undo);
-                          if (mounted) {
-                            setState(() {});
-                            if (context.mounted) {
-                              toast(
-                                context,
-                                undo
-                                    ? 'Your move is ready when you are.'
-                                    : 'Resting for today. Your move stays saved.',
-                              );
-                            }
-                          }
-                        } catch (_) {
-                          if (mounted && context.mounted) {
-                            toast(
-                              context,
-                              'Could not save that change. Please try again.',
-                            );
-                          }
-                        }
-                      },
-                      child: Text(
-                        c.isResting(v.id) ? 'Undo rest' : 'Not today',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
           if (v.obstacle.isNotEmpty) ...[
             const SizedBox(height: 12),
             ExpansionTile(

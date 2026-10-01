@@ -9,9 +9,11 @@ class MoveEditor extends StatefulWidget {
     super.key,
     required this.controller,
     required this.visionId,
+    this.smaller = false,
   });
   final StillController controller;
   final String visionId;
+  final bool smaller;
   @override
   State<MoveEditor> createState() => _MoveEditorState();
 }
@@ -27,11 +29,12 @@ class _MoveEditorState extends State<MoveEditor> {
     final vision = widget.controller.vision(widget.visionId);
     obstacle = vision.obstacle;
     cue.text = widget.controller.move(vision)?.cue ?? '';
-    text.text =
-        widget.controller
-            .move(widget.controller.vision(widget.visionId))
-            ?.text ??
-        '';
+    text.text = widget.smaller
+        ? ''
+        : widget.controller
+                  .move(widget.controller.vision(widget.visionId))
+                  ?.text ??
+              '';
   }
 
   @override
@@ -69,13 +72,40 @@ class _MoveEditorState extends State<MoveEditor> {
       children: [
         const Eyebrow('One small move'),
         const SizedBox(height: 12),
-        Text('What would make this\na little more real?', style: editorial(34)),
+        Text(
+          widget.smaller
+              ? 'What is the easiest first action?'
+              : 'What would make this\na little more real?',
+          style: editorial(34),
+        ),
         const SizedBox(height: 12),
-        const Text(
-          'One thing is enough. You can change it later.',
+        Text(
+          widget.smaller
+              ? 'Aim for something you could start in about two minutes. Starting counts; you do not need to finish the whole task.'
+              : 'One thing is enough. You can change it later.',
           style: TextStyle(color: muted, height: 1.6),
         ),
         const SizedBox(height: 24),
+        if (widget.smaller) ...[
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final example in [
+                'Open what I need to begin.',
+                'Write one rough sentence.',
+                'List the first thing I need.',
+              ])
+                ActionChip(
+                  label: Text(example),
+                  onPressed: saving
+                      ? null
+                      : () => setState(() => text.text = example),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
         ExpansionTile(
           tilePadding: EdgeInsets.zero,
           title: const Text(

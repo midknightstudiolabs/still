@@ -4,6 +4,27 @@ import '../domain/models.dart';
 import 'design.dart';
 import 'progress.dart';
 
+Future<void> recordValue(
+  BuildContext context,
+  StillController c,
+  String id,
+) async {
+  final v = c.vision(id);
+  final saved = await showDialog<ValueEntry>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => _EntryDialog(
+      money: v.measure == ProgressMeasure.money,
+      now: c.clock(),
+      unit: v.valueUnit,
+      onSave: (entry) => c.appendValueEntry(id, entry),
+    ),
+  );
+  if (saved != null && context.mounted) {
+    toast(context, 'Recorded. You’re at ${c.vision(id).progressPercent}%.');
+  }
+}
+
 class ValueProgressEditor extends StatefulWidget {
   const ValueProgressEditor({
     super.key,
@@ -315,7 +336,14 @@ class _ValueProgressEditorState extends State<ValueProgressEditor> {
 }
 
 class _EntryDialog extends StatefulWidget {
-  const _EntryDialog({required this.money, required this.now});
+  const _EntryDialog({
+    required this.money,
+    required this.now,
+    this.onSave,
+    this.unit = '',
+  });
+  final Future<void> Function(ValueEntry)? onSave;
+  final String unit;
   final bool money;
   final DateTime now;
   @override
@@ -326,6 +354,7 @@ class _EntryDialogState extends State<_EntryDialog> {
   final amount = TextEditingController(), note = TextEditingController();
   late DateTime when = widget.now;
   String? error;
+  bool saving = false;
   @override
   void dispose() {
     amount.dispose();
@@ -334,83 +363,120 @@ class _EntryDialogState extends State<_EntryDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(
-      widget.money ? 'Record a deposit or withdrawal' : 'Record a value',
+  Widget build(BuildContext context) => PopScope(
+    canPop: !saving,
+    child: AlertDialog(
+      title: Text(
+        widget.money ? 'Record a deposit or withdrawal' : 'Record a value',
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: amount,
+              enabled: !saving,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              decoration: InputDecoration(
+                labelText: widget.unit.isEmpty
+                    ? 'Amount'
+                    : 'Amount (${widget.unit})',
+                hintText: '500 or -100',
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Positive to add; negative to subtract. Use up to two decimals, without commas.',
+            ),
+            TextField(
+              controller: note,
+              enabled: !saving,
+              maxLength: 120,
+              decoration: const InputDecoration(labelText: 'Note (optional)'),
+            ),
+            TextButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      final chosen = await showDatePicker(
+                        context: context,
+                        initialDate: when,
+                        firstDate: DateTime(1900),
+                        lastDate: widget.now,
+                        helpText: 'When did this happen?',
+                      );
+                      if (chosen != null && mounted) {
+                        setState(() => when = chosen);
+                      }
+                    },
+              child: Text('Date: ${shortDate(when)}'),
+            ),
+            if (error != null)
+              Text(
+                error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: saving ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: saving
+              ? null
+              : () async {
+                  final value = parseValue(amount.text);
+                  if (value == null ||
+                      value == 0 ||
+                      value.abs() > 100000000000) {
+                    setState(
+                      () => error =
+                          'Enter a nonzero amount up to 1 billion, with up to two decimals.',
+                    );
+                    return;
+                  }
+                  final entry = ValueEntry(
+                    id: DateTime.now().microsecondsSinceEpoch.toString(),
+                    amount: value,
+                    when: when,
+                    note: note.text.trim(),
+                  );
+                  setState(() {
+                    saving = true;
+                    error = null;
+                  });
+                  try {
+                    await widget.onSave?.call(entry);
+                    if (!mounted) return;
+                    setState(() => saving = false);
+                    await WidgetsBinding.instance.endOfFrame;
+                    if (context.mounted) Navigator.pop(context, entry);
+                  } catch (_) {
+                    if (mounted) {
+                      setState(() {
+                        saving = false;
+                        error =
+                            'Could not save. Check that the total stays between 0 and 1 billion, then try again. Your entry is still here.';
+                      });
+                    }
+                  }
+                },
+          child: Text(
+            saving
+                ? 'Saving…'
+                : widget.onSave == null
+                ? 'Keep entry'
+                : 'Save entry',
+          ),
+        ),
+      ],
     ),
-    content: SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: amount,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: true,
-            ),
-            decoration: const InputDecoration(
-              labelText: 'Amount',
-              hintText: '500 or -100',
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Positive to add; negative to subtract. Use up to two decimals, without commas.',
-          ),
-          TextField(
-            controller: note,
-            maxLength: 120,
-            decoration: const InputDecoration(labelText: 'Note (optional)'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final chosen = await showDatePicker(
-                context: context,
-                initialDate: when,
-                firstDate: DateTime(1900),
-                lastDate: widget.now,
-                helpText: 'When did this happen?',
-              );
-              if (chosen != null && mounted) setState(() => when = chosen);
-            },
-            child: Text('Date: ${shortDate(when)}'),
-          ),
-          if (error != null)
-            Text(
-              error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-        ],
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
-      ),
-      FilledButton(
-        onPressed: () {
-          final value = parseValue(amount.text);
-          if (value == null || value == 0 || value.abs() > 100000000000) {
-            setState(
-              () => error =
-                  'Enter a nonzero amount up to 1 billion, with up to two decimals.',
-            );
-            return;
-          }
-          Navigator.pop(
-            context,
-            ValueEntry(
-              id: DateTime.now().microsecondsSinceEpoch.toString(),
-              amount: value,
-              when: when,
-              note: note.text.trim(),
-            ),
-          );
-        },
-        child: const Text('Keep entry'),
-      ),
-    ],
   );
 }

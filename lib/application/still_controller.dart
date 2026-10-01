@@ -263,6 +263,48 @@ class StillController extends ChangeNotifier {
       ..nextMoveId = null
       ..updatedAt = clock();
   });
+
+  Future<void> setMilestoneDone(String id, String milestoneId, bool done) =>
+      transact((d) {
+        final v = d.visions.firstWhere((v) => v.id == id);
+        final m = v.milestones.firstWhere((m) => m.id == milestoneId);
+        m.completedAt = done ? (m.completedAt ?? clock()) : null;
+        v.updatedAt = clock();
+      });
+
+  Future<void> appendValueEntry(String id, ValueEntry entry) => transact((d) {
+    final v = d.visions.firstWhere((v) => v.id == id);
+    if (v.measure == ProgressMeasure.milestones ||
+        v.valueTarget <= 0 ||
+        entry.amount == 0 ||
+        entry.amount.abs() > 100000000000 ||
+        v.valueTotal + entry.amount < 0 ||
+        v.valueTotal + entry.amount > 100000000000) {
+      throw ArgumentError(
+        'Check the amount. Your total cannot be negative or exceed 1 billion.',
+      );
+    }
+    if (v.entries.any((e) => e.id == entry.id)) return;
+    v.entries.add(entry);
+    v.updatedAt = clock();
+  });
+
+  Future<void> undoMove(String id, String moveId) => transact((d) {
+    final v = d.visions.firstWhere((v) => v.id == id);
+    final m = d.moves.firstWhere((m) => m.id == moveId && m.visionId == id);
+    if (m.status != MoveStatus.completed || v.nextMoveId != null) return;
+    d.proofs.removeWhere(
+      (p) =>
+          p.visionId == id &&
+          p.proofType == ProofType.action &&
+          p.createdAt == m.completedAt &&
+          p.note == m.text,
+    );
+    m.status = MoveStatus.current;
+    m.completedAt = null;
+    v.nextMoveId = m.id;
+    v.updatedAt = clock();
+  });
   Future<void> addProof(
     String visionId,
     String note, {
