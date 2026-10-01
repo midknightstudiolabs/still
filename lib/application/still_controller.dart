@@ -255,7 +255,7 @@ class StillController extends ChangeNotifier {
         id: _id(),
         visionId: visionId,
         note: m.text,
-        createdAt: clock(),
+        createdAt: m.completedAt!,
         proofType: ProofType.action,
       ),
     );

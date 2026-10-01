@@ -173,19 +173,22 @@ class _TodayActionState extends State<TodayAction> {
                 ],
               ),
               if ((numeric || hasMilestones) && move != null)
-                ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  title: const Text('Your small starting step'),
-                  children: [
-                    Text(move.text, style: const TextStyle(height: 1.6)),
-                    if (move.cue.isNotEmpty) Text('When or if: ${move.cue}'),
-                    TextButton(
-                      onPressed: busy
-                          ? null
-                          : () => run(() => finishMove(move)),
-                      child: const Text('I did this small step'),
-                    ),
-                  ],
+                Material(
+                  color: Colors.transparent,
+                  child: ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    title: const Text('Your small starting step'),
+                    children: [
+                      Text(move.text, style: const TextStyle(height: 1.6)),
+                      if (move.cue.isNotEmpty) Text('When or if: ${move.cue}'),
+                      TextButton(
+                        onPressed: busy
+                            ? null
+                            : () => run(() => finishMove(move)),
+                        child: const Text('I did this small step'),
+                      ),
+                    ],
+                  ),
                 ),
             ],
             if (rest)
