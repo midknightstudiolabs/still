@@ -42,7 +42,7 @@ Saved visions can also be edited from the pencil button. Change any answer indiv
 
 **Live app: https://midknightstudiolabs.github.io/still/**
 
-**Version 1.4.0 verified on GitHub Actions (Ubuntu): static analysis, all 37 automated tests, the release web build, and Pages deployment passed.** The live version endpoint reports 1.4.0 build 7. Thirteen mobile widget previews were generated and visually reviewed, including dark mode and a 320-pixel screen at 160% text scaling. [Successful deployment](https://github.com/midknightstudiolabs/still/actions/runs/36564376383).
+**Version 1.5.0 verified on GitHub Actions (Ubuntu): static analysis, all 40 automated tests, the release web build, and Pages deployment passed.** The live version endpoint reports 1.5.0 build 8. Thirteen mobile widget previews were generated and visually reviewed, including dark mode and a 320-pixel screen at 160% text scaling. [Successful deployment](https://github.com/midknightstudiolabs/still/actions/runs/36809584414).
 
 Flutter 3.47.5 / Dart 3.13.4 were used. Windows application control originally prevented local runtime testing; the Linux cloud runner subsequently executed the tests and web build successfully. Narrow-layout and test-interaction issues discovered in the first run were corrected before deployment. Native APK/iOS builds and real-device photo picking remain unverified.
 
@@ -157,3 +157,7 @@ Also inspect 320-pixel-wide devices, large text, keyboard visibility, light and 
 The design gives one vision and one action prominence. No checklist dashboard, streak, deadline warning, performance chart, percentage, or quote library exists. “Not today,” Later, and Let Go are normal choices. Proof comes from real life. The first actionable button is “What matters to you?” or, in the demo, “I did something.” These choices follow the brief; perceived polish and the ten-second comprehension test still need a device review.
 
 See `ASSETS.md` for image provenance and font licenses.
+
+## Easier daily actions
+
+Today puts the relevant action first: direct deposits or value entries, milestone completion with Undo, or the current small step. Make it smaller offers editable starter examples and an optional when/if cue. Completion does not force another planning form. See [design rationale and evidence limits](STARTING-EASIER.md).
